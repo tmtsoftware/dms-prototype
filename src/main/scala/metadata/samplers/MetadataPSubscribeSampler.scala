@@ -1,4 +1,4 @@
-package metadata
+package metadata.samplers
 
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -12,6 +12,7 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
+import metadata.{RedisGlobalSubscriber, SamplerUtil}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
