@@ -10,12 +10,13 @@ import scala.concurrent.Future
 
 class RedisApi(redisURI: Future[RedisURI], redisClient: RedisClient)(implicit actorSystem: ActorSystem[_]) {
 
-  import actorSystem.executionContext
   import RomaineCodecs._
+  import actorSystem.executionContext
   private lazy val romaineFactory = new RomaineFactory(redisClient)
 
   private val redisApi: RedisAsyncApi[String, Event] = romaineFactory.redisAsyncApi(redisURI)
 
   def keys(pattern: String): Future[List[EventKey]] = redisApi.keys(pattern).map(_.map(EventKey.apply))
 
+  def allKeys(): Future[List[EventKey]] = keys("*.*.*")
 }

@@ -12,7 +12,6 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
-import metadata.SamplerUtil.{printAggregates, recordHistogram}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -24,6 +23,7 @@ class MetadataPSubscribeSampler(
     eventService: EventService
 )(implicit actorSystem: ActorSystem[_]) {
 
+  private val samplerUtil     = new SamplerUtil
   private val eventSubscriber = eventService.defaultSubscriber
 
   var currentState   = new ConcurrentHashMap[EventKey, Event]() // mutable map with variable ref
@@ -52,7 +52,7 @@ class MetadataPSubscribeSampler(
 
     //Snapshot time diff
     snapshotTimeList.addOne(snapshotTime)
-    recordHistogram(Math.abs(eventTimeDiff), Math.abs(snapshotTime))
+    samplerUtil.recordHistogram(Math.abs(eventTimeDiff), Math.abs(snapshotTime))
 
     println(s"${lastSnapshot.size} ,$eventTimeDiff ,$snapshotTime")
   }
@@ -63,7 +63,7 @@ class MetadataPSubscribeSampler(
   def start(): Future[Done] = {
     //print aggregates
     CoordinatedShutdown(actorSystem).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "print aggregates") { () =>
-      printAggregates(eventTimeDiffList, snapshotTimeList)
+      samplerUtil.printAggregates(eventTimeDiffList, snapshotTimeList)
       Future.successful(Done)
     }
 

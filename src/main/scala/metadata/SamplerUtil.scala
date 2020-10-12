@@ -4,7 +4,7 @@ import org.HdrHistogram.Histogram
 
 import scala.collection.mutable.ListBuffer
 
-object SamplerUtil {
+class SamplerUtil {
 
   val histogramEventsDiff: Histogram = new Histogram(3)
   val histogramSanpshot: Histogram   = new Histogram(3)

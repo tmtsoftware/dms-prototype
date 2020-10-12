@@ -11,7 +11,6 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
-import metadata.SamplerUtil.{printAggregates, recordHistogram}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
@@ -21,6 +20,7 @@ class MetadataGetSamplerWithFixedKeys(eventService: EventService, eventKeys: Set
     actorSystem: ActorSystem[_]
 ) {
 
+  private val samplerUtil     = new SamplerUtil
   private val redisSubscriber = eventService.defaultSubscriber
 
   val eventTimeDiffList: ListBuffer[Long] = scala.collection.mutable.ListBuffer()
@@ -42,7 +42,7 @@ class MetadataGetSamplerWithFixedKeys(eventService: EventService, eventKeys: Set
 
     //Snapshot time diff
     snapshotTimeList.addOne(snapshotTime)
-    recordHistogram(Math.abs(eventDiffNormalized), Math.abs(snapshotTime))
+    samplerUtil.recordHistogram(Math.abs(eventDiffNormalized), Math.abs(snapshotTime))
 
     println(s"${lastSnapshot.size} ,$eventDiffNormalized ,$snapshotTime")
   }
@@ -55,7 +55,7 @@ class MetadataGetSamplerWithFixedKeys(eventService: EventService, eventKeys: Set
   def start(): Future[Done] = {
     //print aggregates
     CoordinatedShutdown(actorSystem).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "print aggregates") { () =>
-      printAggregates(eventTimeDiffList, snapshotTimeList)
+      samplerUtil.printAggregates(eventTimeDiffList, snapshotTimeList)
       Future.successful(Done)
     }
 
@@ -76,8 +76,8 @@ object MetadataGetSamplerWithFixedKeys extends App {
 
   private val eventService = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
 
-  val eventKeys       = Await.result(new RedisApi(eventualRedisURI, redisClient).keys("*.*.*"), 10.seconds).toSet
-  private val sampler = new MetadataGetSamplerWithFixedKeys(eventService, eventKeys)
+  private val eventKeys = Await.result(new RedisApi(eventualRedisURI, redisClient).allKeys(), 10.seconds).toSet
+  private val sampler   = new MetadataGetSamplerWithFixedKeys(eventService, eventKeys)
 
   Await.result(sampler.start(), 20.minutes)
   system.terminate()

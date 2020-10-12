@@ -11,7 +11,6 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
-import metadata.SamplerUtil.{printAggregates, recordHistogram}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
@@ -19,6 +18,7 @@ import scala.concurrent.{Await, Future}
 
 class MetadataGetSampler(eventService: EventService, redisApi: RedisApi)(implicit actorSystem: ActorSystem[_]) {
 
+  private val samplerUtil     = new SamplerUtil
   private val eventSubscriber = eventService.defaultSubscriber
 
   val eventTimeDiffList: ListBuffer[Long] = scala.collection.mutable.ListBuffer()
@@ -27,8 +27,7 @@ class MetadataGetSampler(eventService: EventService, redisApi: RedisApi)(implici
   def snapshot(obsEvent: Event): Unit = {
     val startTime = System.currentTimeMillis()
 
-    val pattern      = EventKey("*.*.*")
-    val eventKeys    = Await.result(redisApi.keys("*.*.*"), 10.seconds).toSet
+    val eventKeys    = Await.result(redisApi.allKeys(), 10.seconds).toSet
     val lastSnapshot = Await.result(eventSubscriber.get(eventKeys), 10.seconds)
     val endTime      = System.currentTimeMillis()
 
@@ -42,7 +41,7 @@ class MetadataGetSampler(eventService: EventService, redisApi: RedisApi)(implici
 
     //Snapshot time diff
     snapshotTimeList.addOne(snapshotTime)
-    recordHistogram(Math.abs(eventDiffNormalized), Math.abs(snapshotTime))
+    samplerUtil.recordHistogram(Math.abs(eventDiffNormalized), Math.abs(snapshotTime))
 
     println(s"${lastSnapshot.size} ,$eventDiffNormalized ,$snapshotTime")
   }
@@ -55,7 +54,7 @@ class MetadataGetSampler(eventService: EventService, redisApi: RedisApi)(implici
   def start(): Future[Done] = {
     //print aggregates
     CoordinatedShutdown(actorSystem).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "print aggregates") { () =>
-      printAggregates(eventTimeDiffList, snapshotTimeList)
+      samplerUtil.printAggregates(eventTimeDiffList, snapshotTimeList)
       Future.successful(Done)
     }
 
