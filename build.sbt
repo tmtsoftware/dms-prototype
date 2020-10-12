@@ -6,8 +6,10 @@ scalaVersion := "2.13.3"
 
 resolvers += "jitpack" at "https://jitpack.io"
 
+val cswVersion = "098d6fc"
+
 libraryDependencies ++= Seq(
- "com.github.tmtsoftware.csw" %% "csw-location-client" % "620786ec2b",
- "com.github.tmtsoftware.csw" %% "csw-event-client" % "620786ec2b",
- "org.hdrhistogram"         % "HdrHistogram"      % "2.1.12"
+  "com.github.tmtsoftware.csw" %% "csw-location-client" % cswVersion,
+  "com.github.tmtsoftware.csw" %% "csw-event-client"    % cswVersion,
+  "org.hdrhistogram"            % "HdrHistogram"        % "2.1.12"
 )
