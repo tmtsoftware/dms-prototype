@@ -11,7 +11,7 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
-import metadata.{RedisApi, SamplerUtil}
+import metadata.util.{RedisUtil, SamplerUtil}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
@@ -77,7 +77,7 @@ object MetadataGetSamplerWithFixedKeys extends App {
 
   private val eventService = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
 
-  private val eventKeys = Await.result(new RedisApi(eventualRedisURI, redisClient).allKeys(), 10.seconds).toSet
+  private val eventKeys = Await.result(new RedisUtil(eventualRedisURI, redisClient).allKeys(), 10.seconds).toSet
   private val sampler   = new MetadataGetSamplerWithFixedKeys(eventService, eventKeys)
 
   Await.result(sampler.start(), 20.minutes)

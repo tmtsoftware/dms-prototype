@@ -11,13 +11,13 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
-import metadata.{RedisApi, SamplerUtil}
+import metadata.util.{RedisUtil, SamplerUtil}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
-class MetadataGetSampler(eventService: EventService, redisApi: RedisApi)(implicit actorSystem: ActorSystem[_]) {
+class MetadataGetSampler(eventService: EventService, redisApi: RedisUtil)(implicit actorSystem: ActorSystem[_]) {
 
   private val samplerUtil     = new SamplerUtil
   private val eventSubscriber = eventService.defaultSubscriber
@@ -72,7 +72,7 @@ object MetadataGetSampler extends App {
   private val port = 26379
   private val eventualRedisURI: Future[RedisURI] =
     Future.successful(RedisURI.Builder.sentinel(host, port, "eventServer").build())
-  val redisApi = new RedisApi(eventualRedisURI, redisClient)
+  val redisApi = new RedisUtil(eventualRedisURI, redisClient)
 
   private val eventService = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
   private val sampler      = new MetadataGetSampler(eventService, redisApi)

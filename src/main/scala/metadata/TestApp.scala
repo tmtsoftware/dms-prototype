@@ -32,7 +32,7 @@ object TestApp extends App {
   val eventualInteger = context
     .query(
       s"""
-      INSERT INTO event_snapshots values ${eventSeq("expId7000", "startExposure", event)}
+        INSERT INTO event_snapshots values ${eventSeq("expId7000", "startExposure", event)}
       """
     )
     .executeAsyncScala()

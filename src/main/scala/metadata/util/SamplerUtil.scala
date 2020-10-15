@@ -1,4 +1,4 @@
-package metadata
+package metadata.util
 
 import org.HdrHistogram.Histogram
 

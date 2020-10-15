@@ -1,4 +1,4 @@
-package metadata
+package metadata.util
 
 import akka.actor.typed.ActorSystem
 import csw.params.events.{Event, EventKey}
@@ -8,7 +8,7 @@ import romaine.async.RedisAsyncApi
 
 import scala.concurrent.Future
 
-class RedisApi(redisURI: Future[RedisURI], redisClient: RedisClient)(implicit actorSystem: ActorSystem[_]) {
+class RedisUtil(redisURI: Future[RedisURI], redisClient: RedisClient)(implicit actorSystem: ActorSystem[_]) {
 
   import RomaineCodecs._
   import actorSystem.executionContext
