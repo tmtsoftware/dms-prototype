@@ -15,6 +15,15 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 class DbUtil(dslContext: DSLContext)(implicit executionContext: ExecutionContext) {
   import csw.params.core.formats.ParamCodecs.paramEncExistential
 
+  def cleanTable(): Future[Integer] = dslContext.query("delete from event_snapshots").executeAsyncScala()
+
+  def store(expId: String, obsEventName: String, snapshot: ConcurrentHashMap[EventKey, Event]): Future[Done] = {
+    dslContext
+      .query(s"INSERT INTO event_snapshots values ${snapshotSql(expId, obsEventName, snapshot)}")
+      .executeAsyncScala()
+      .map(_ => Done)
+  }
+
   private def eventSql(expId: String, obsEventName: String, event: Event) =
     s"""('$expId','$obsEventName','${event.source.toString()}','${event.eventName.name}',
         '${event.eventId.id}','${Timestamp.from(event.eventTime.value)}',
@@ -24,10 +33,4 @@ class DbUtil(dslContext: DSLContext)(implicit executionContext: ExecutionContext
   private def snapshotSql(expId: String, obsEventName: String, snapshot: ConcurrentHashMap[EventKey, Event]): String =
     snapshot.values().asScala.toList.map(eventSql(expId, obsEventName, _)).mkString(",")
 
-  def store(expId: String, obsEventName: String, snapshot: ConcurrentHashMap[EventKey, Event]): Future[Done] = {
-    dslContext
-      .query(s"INSERT INTO event_snapshots values ${snapshotSql(expId, obsEventName, snapshot)}")
-      .executeAsyncScala()
-      .map(_ => Done)
-  }
 }

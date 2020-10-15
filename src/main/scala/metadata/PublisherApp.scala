@@ -2,6 +2,7 @@ package metadata
 
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.stream.scaladsl.Source
 import csw.event.client.EventServiceFactory
 import csw.location.client.ActorSystemFactory
 import csw.params.core.generics.{KeyType, Parameter}
@@ -9,10 +10,12 @@ import csw.params.core.models.Units.NoUnits
 import csw.params.events.{EventName, ObserveEvent, SystemEvent}
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.ESW
+import metadata.PublisherApp.observeEventSource
 import metadata.util.SourceUtil
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.util.Random
 
 object PublisherApp extends App {
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
@@ -24,7 +27,7 @@ object PublisherApp extends App {
   // observe event
   private val observeEventSource: Future[Done] = {
     SourceUtil
-      .tick(0.seconds, 500.millis)
+      .tick(0.seconds, 1.seconds)
       .take(1200)
       .runForeach(_ => {
         val exposureId = s"2034A-P054-O010-WFOS-BLU1-SCI1-$counter"
@@ -32,6 +35,19 @@ object PublisherApp extends App {
         println(s"Publishing observe event $counter")
         counter += 1
         publisher.publish(ObserveEvent(Prefix(ESW, "observe"), EventName("exposureStart"), Set(param)))
+      })
+  }
+
+  private val observeEventSource2: Future[Done] = {
+    SourceUtil
+      .tick(500.millis, 1.seconds)
+      .take(1200)
+      .runForeach(_ => {
+        val exposureId = s"2034A-P054-O010-WFOS-BLU1-SCI1-$counter"
+        val param      = Parameter("exposureId", KeyType.StringKey, scala.collection.mutable.ArraySeq(exposureId), NoUnits)
+        println(s"Publishing observe event $counter")
+        counter += 1
+        publisher.publish(ObserveEvent(Prefix(ESW, "observe"), EventName("exposureEnd"), Set(param)))
       })
   }
 
@@ -46,6 +62,7 @@ object PublisherApp extends App {
     .runForeach(_ => publisher.publish(SystemEvent(Prefix(ESW, "filter"), EventName("wheel1"))))
 
   Await.result(observeEventSource, 18.minutes)
+  Await.result(observeEventSource2, 18.minutes)
 
   system.terminate()
 

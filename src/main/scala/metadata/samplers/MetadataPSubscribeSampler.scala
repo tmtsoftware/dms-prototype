@@ -19,7 +19,6 @@ import metadata.subscriber.RedisGlobalSubscriber
 import metadata.util.{DbUtil, SamplerUtil}
 import org.jooq.DSLContext
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -69,20 +68,20 @@ class MetadataPSubscribeSampler(
     if (slowEventTimeDiff > 1000) outlierSlowEventCount += 1
 
     //Event time diff
-    eventTimeDiffList.addOne(eventTimeDiff)
-    slowEventTimeDiffList.addOne(slowEventTimeDiff)
+    eventTimeDiffList.addOne(Math.abs(eventTimeDiff))
+    slowEventTimeDiffList.addOne(Math.abs(slowEventTimeDiff))
 
     //Snapshot time diff
     snapshotTimeList.addOne(snapshotTime)
     samplerUtil.recordHistogram(Math.abs(eventTimeDiff), Math.abs(snapshotTime))
-    samplerUtilSlow.recordHistogram(Math.abs(eventTimeDiff), Math.abs(snapshotTime))
+    samplerUtilSlow.recordHistogram(Math.abs(slowEventTimeDiff), Math.abs(snapshotTime))
 
     println(s"${lastSnapshot.size} ,$eventTimeDiff ,$slowEventTimeDiff,$snapshotTime")
   }
 
   def subscribeObserveEvents(): Future[Done] =
     eventSubscriber
-      .subscribe(Set(EventKey("esw.observe.exposureStart")))
+      .subscribe(Set(EventKey("esw.observe.exposureStart"), EventKey("esw.observe.exposureEnd")))
       .drop(5)
       .take(1000)
       .runForeach(snapshot)
@@ -91,6 +90,8 @@ class MetadataPSubscribeSampler(
     //print aggregates
     CoordinatedShutdown(actorSystem).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "print aggregates") { () =>
       samplerUtil.printAggregates(eventTimeDiffList, snapshotTimeList)
+      println("------------FOR SLOW EVENT--------------------")
+      samplerUtilSlow.printAggregates(slowEventTimeDiffList, snapshotTimeList)
       println(s"outlierEventCount = $outlierEventCount")
       println(s"outlierNegEventCount = $outlierNegEventCount")
       println(s"outlierSlowEventCount = $outlierSlowEventCount")
@@ -122,6 +123,7 @@ object MetadataPSubscribeSampler extends App {
     Await.result(new DatabaseServiceFactory(system).makeDsl(locationService, "mydb"), 10.seconds)
 
   private val util = new DbUtil(dslContext)(system.executionContext)
+  Await.result(util.cleanTable(), 10.seconds)
 
   private val eventService                            = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
   private val globalSubscriber: RedisGlobalSubscriber = RedisGlobalSubscriber.make(redisClient, eventualRedisURI)
