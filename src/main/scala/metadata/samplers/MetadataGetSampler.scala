@@ -48,7 +48,12 @@ class MetadataGetSampler(eventService: EventService, redisApi: RedisUtil)(implic
   }
 
   def subscribeObserveEvents(): Future[Done] = {
-    val subscriberSource = eventSubscriber.subscribe(Set(EventKey("esw.observe.expstr"))).drop(50).take(1000).runForeach(snapshot)
+    val subscriberSource =
+      eventSubscriber
+        .subscribe(Set(EventKey("esw.observe.exposureStart")))
+        .drop(50)
+        .take(1000)
+        .runForeach(snapshot)
     subscriberSource
   }
 

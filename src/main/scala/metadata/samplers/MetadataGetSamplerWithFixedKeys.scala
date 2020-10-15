@@ -49,7 +49,12 @@ class MetadataGetSamplerWithFixedKeys(eventService: EventService, eventKeys: Set
   }
 
   def subscribeObserveEvents(): Future[Done] = {
-    val eventualDone = redisSubscriber.subscribe(Set(EventKey("esw.observe.expstr"))).drop(50).take(10).runForeach(snapshot)
+    val eventualDone =
+      redisSubscriber
+        .subscribe(Set(EventKey("esw.observe.exposureStart")))
+        .drop(50)
+        .take(10)
+        .runForeach(snapshot)
     eventualDone
   }
 

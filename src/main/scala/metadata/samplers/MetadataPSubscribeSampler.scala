@@ -46,7 +46,9 @@ class MetadataPSubscribeSampler(
 
     val lastSnapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(currentState)
 
-//    dbUtil.store()
+    val exposureId =
+      obsEvent.paramSet.find(p => p.keyName.equals("exposureId")).map(e => e.items.head match { case s: String => s }).get
+    dbUtil.store(exposureId, obsEvent.eventName.name, lastSnapshot)
     while (snapshotsQueue.size > 100) { snapshotsQueue.dequeue } // maintain 100 exposures in memory
 
     val endTime = System.currentTimeMillis()
@@ -66,7 +68,11 @@ class MetadataPSubscribeSampler(
   }
 
   def subscribeObserveEvents(): Future[Done] =
-    eventSubscriber.subscribe(Set(EventKey("esw.observe.expstr"))).drop(5).take(1000).runForeach(snapshot)
+    eventSubscriber
+      .subscribe(Set(EventKey("esw.observe.exposureStart")))
+      .drop(5)
+      .take(1000)
+      .runForeach(snapshot)
 
   def start(): Future[Done] = {
     //print aggregates
