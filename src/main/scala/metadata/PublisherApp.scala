@@ -31,7 +31,7 @@ object PublisherApp extends App {
       val param      = Parameter("exposureId", KeyType.StringKey, scala.collection.mutable.ArraySeq(exposureId), NoUnits)
       println(s"Publishing observe event $counter")
       counter += 1
-      publisher.publish(ObserveEvent(Prefix(ESW, "observe"), EventName("expstr"), Set(param)))
+      publisher.publish(ObserveEvent(Prefix(ESW, "observe"), EventName("exposureStart"), Set(param)))
     })
 
   // 100Hz event
