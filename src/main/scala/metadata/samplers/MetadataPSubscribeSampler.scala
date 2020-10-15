@@ -15,7 +15,6 @@ import csw.location.client.ActorSystemFactory
 import csw.location.client.scaladsl.HttpLocationServiceFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
-import metadata.TestApp.system
 import metadata.subscriber.RedisGlobalSubscriber
 import metadata.util.{DbUtil, SamplerUtil}
 import org.jooq.DSLContext
@@ -32,14 +31,19 @@ class MetadataPSubscribeSampler(
 )(implicit actorSystem: ActorSystem[_]) {
 
   private val samplerUtil     = new SamplerUtil
+  private val samplerUtilSlow = new SamplerUtil
   private val eventSubscriber = eventService.defaultSubscriber
 
-  var currentState   = new ConcurrentHashMap[EventKey, Event]() // mutable map with variable ref
-  val snapshotsQueue = new mutable.Queue[(String, ConcurrentHashMap[EventKey, Event])]()
+  var currentState = new ConcurrentHashMap[EventKey, Event]() // mutable map with variable ref
 
-  var numberOfSnapshots                   = 0d
-  val eventTimeDiffList: ListBuffer[Long] = scala.collection.mutable.ListBuffer()
-  val snapshotTimeList: ListBuffer[Long]  = scala.collection.mutable.ListBuffer()
+  var numberOfSnapshots                       = 0d
+  val eventTimeDiffList: ListBuffer[Long]     = scala.collection.mutable.ListBuffer()
+  val slowEventTimeDiffList: ListBuffer[Long] = scala.collection.mutable.ListBuffer()
+  var outlierNegEventCount                    = 0
+  var outlierEventCount                       = 0
+  var outlierNegSlowEventCount                = 0
+  var outlierSlowEventCount                   = 0
+  val snapshotTimeList: ListBuffer[Long]      = scala.collection.mutable.ListBuffer()
 
   def snapshot(obsEvent: Event): Unit = {
     val startTime = System.currentTimeMillis()
@@ -48,23 +52,32 @@ class MetadataPSubscribeSampler(
 
     val exposureId =
       obsEvent.paramSet.find(p => p.keyName.equals("exposureId")).map(e => e.items.head match { case s: String => s }).get
-    dbUtil.store(exposureId, obsEvent.eventName.name, lastSnapshot)
-    while (snapshotsQueue.size > 100) { snapshotsQueue.dequeue } // maintain 100 exposures in memory
-
+    val storeInDb = dbUtil.store(exposureId, obsEvent.eventName.name, lastSnapshot)
+    Await.result(storeInDb, 10.seconds)
     val endTime = System.currentTimeMillis()
 
-    val event         = lastSnapshot.getOrDefault(EventKey("ESW.filter.wheel"), Event.badEvent())
-    val eventTimeDiff = Duration.between(event.eventTime.value, obsEvent.eventTime.value).toMillis
-    val snapshotTime  = endTime - startTime
+    val event             = lastSnapshot.getOrDefault(EventKey("ESW.filter.wheel"), Event.badEvent())
+    val slowEvent         = lastSnapshot.getOrDefault(EventKey("ESW.filter.wheel1"), Event.badEvent())
+    val eventTimeDiff     = Duration.between(event.eventTime.value, obsEvent.eventTime.value).toMillis
+    val slowEventTimeDiff = Duration.between(slowEvent.eventTime.value, obsEvent.eventTime.value).toMillis
+    val snapshotTime      = endTime - startTime
+
+    //Outliers
+    if (eventTimeDiff < 0) outlierNegEventCount += 1
+    if (eventTimeDiff > 10) outlierEventCount += 1
+    if (slowEventTimeDiff < 0) outlierNegSlowEventCount += 1
+    if (slowEventTimeDiff > 1000) outlierSlowEventCount += 1
 
     //Event time diff
-    eventTimeDiffList.addOne(Math.abs(eventTimeDiff))
+    eventTimeDiffList.addOne(eventTimeDiff)
+    slowEventTimeDiffList.addOne(slowEventTimeDiff)
 
     //Snapshot time diff
     snapshotTimeList.addOne(snapshotTime)
     samplerUtil.recordHistogram(Math.abs(eventTimeDiff), Math.abs(snapshotTime))
+    samplerUtilSlow.recordHistogram(Math.abs(eventTimeDiff), Math.abs(snapshotTime))
 
-    println(s"${lastSnapshot.size} ,$eventTimeDiff ,$snapshotTime")
+    println(s"${lastSnapshot.size} ,$eventTimeDiff ,$slowEventTimeDiff,$snapshotTime")
   }
 
   def subscribeObserveEvents(): Future[Done] =
@@ -78,6 +91,10 @@ class MetadataPSubscribeSampler(
     //print aggregates
     CoordinatedShutdown(actorSystem).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "print aggregates") { () =>
       samplerUtil.printAggregates(eventTimeDiffList, snapshotTimeList)
+      println(s"outlierEventCount = $outlierEventCount")
+      println(s"outlierNegEventCount = $outlierNegEventCount")
+      println(s"outlierSlowEventCount = $outlierSlowEventCount")
+      println(s"outlierNegSlowEventCount = $outlierNegSlowEventCount")
       Future.successful(Done)
     }
 
@@ -111,7 +128,7 @@ object MetadataPSubscribeSampler extends App {
 
   private val sampler = new MetadataPSubscribeSampler(globalSubscriber, eventService, util)
 
-  println("numberOfKeys", "eventTimeDiff", "snapshotTime")
+  println("numberOfKeys", "eventTimeDiff", "slowEventTimeDiff", "snapshotTime")
 
   Await.result(sampler.start(), 20.minutes)
   system.terminate()
