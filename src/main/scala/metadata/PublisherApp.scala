@@ -2,7 +2,6 @@ package metadata
 
 import akka.Done
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.scaladsl.Source
 import csw.event.client.EventServiceFactory
 import csw.location.client.ActorSystemFactory
 import csw.params.core.generics.{KeyType, Parameter}
@@ -10,12 +9,10 @@ import csw.params.core.models.Units.NoUnits
 import csw.params.events.{EventName, ObserveEvent, SystemEvent}
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.ESW
-import metadata.PublisherApp.observeEventSource
 import metadata.util.SourceUtil
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
-import scala.util.Random
 
 object PublisherApp extends App {
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
