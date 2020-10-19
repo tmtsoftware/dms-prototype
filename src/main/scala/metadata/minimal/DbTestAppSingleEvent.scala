@@ -8,13 +8,13 @@ import csw.database.scaladsl.JooqExtentions.RichQuery
 import csw.location.api.scaladsl.LocationService
 import csw.location.client.ActorSystemFactory
 import csw.location.client.scaladsl.HttpLocationServiceFactory
+import csw.params.core.formats.ParamCodecs.paramEncExistential
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventName, SystemEvent}
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.ESW
 import io.bullet.borer.Json
 import org.jooq.DSLContext
-import csw.params.core.formats.ParamCodecs.paramEncExistential
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
@@ -29,7 +29,7 @@ object DbTestAppSingleEvent extends App {
     event.add(payload)
   }
 
-  val `12_MB_EVENT` = addPayload(SystemEvent(Prefix(ESW, "filter"), EventName("wheel5")), 1024 * 12)
+  val `12_MB_EVENT` = addPayload(SystemEvent(Prefix(ESW, "filter"), EventName("wheel5")), 1024 * 1024 * 12)
 
   (1 to 100).foreach { _ =>
     val startTime = System.currentTimeMillis()

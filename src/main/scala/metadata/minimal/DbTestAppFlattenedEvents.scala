@@ -29,10 +29,9 @@ object DbTestAppFlattenedEvents extends App {
     mymap.put(key, event)
   }
   val dbutil = new DbUtil(context)
-  (1 to 10).foreach { _ =>
-    val startTime = System.currentTimeMillis()
-
-    val eventualDone = dbutil.store("expId", "ObsEVent", mymap)
+  (1 to 1000).foreach { i =>
+    val startTime    = System.currentTimeMillis()
+    val eventualDone = dbutil.store(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", "exposureEnd", mymap)
     Await.result(eventualDone, 5.minutes)
     println(mymap.size(), System.currentTimeMillis() - startTime)
 
