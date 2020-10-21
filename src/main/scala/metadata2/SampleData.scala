@@ -14,6 +14,6 @@ object SampleData {
     event.add(payload)
   }
 
-  def snapshot: List[SnapshotRow]      = Snapshot.create("1", "expStart", events)
-  val snapshotConst: List[SnapshotRow] = Snapshot.create("1", "expStart", events)
+  def snapshot(expId: Int): List[SnapshotRow]   = Snapshot.create(expId.toString, "expStart", events)
+  def snapshot2(expId: Int): List[SnapshotRow2] = Snapshot.create2(expId.toString, "expStart", events)
 }
