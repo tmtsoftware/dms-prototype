@@ -12,5 +12,6 @@ libraryDependencies ++= Seq(
   "com.github.tmtsoftware.csw" %% "csw-location-client" % cswVersion,
   "com.github.tmtsoftware.csw" %% "csw-event-client"    % cswVersion,
   "com.github.tmtsoftware.csw" %% "csw-database"        % cswVersion,
-  "org.hdrhistogram"            % "HdrHistogram"        % "2.1.12"
+  "org.hdrhistogram"            % "HdrHistogram"        % "2.1.12",
+  "gov.nasa.gsfc.heasarc"       % "nom-tam-fits"        % "1.15.2"
 )
