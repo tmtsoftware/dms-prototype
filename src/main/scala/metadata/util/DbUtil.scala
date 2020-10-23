@@ -46,14 +46,13 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
   }
 
   def batchVersion2(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
-    val parts = snapshot.sliding(500, 500).toList
-    Source(parts).mapAsyncUnordered(5)(batchAsync(table, _)).run()
+    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchAsync(table, _)).run()
   }
 
-  private def batchAsync(table: String, snapshot: Seq[EventRecord]) = {
-    val batch = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
-    snapshot.foreach { eventRecord =>
-      batch.bind(
+  private def batchAsync(table: String, batch: Seq[EventRecord]) = {
+    val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
+    batch.foreach { eventRecord =>
+      query.bind(
         eventRecord.expId,
         eventRecord.obsEventName,
         eventRecord.source,
@@ -63,7 +62,7 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
         eventRecord.paramSet
       )
     }
-    batch.executeAsync().asScala
+    query.executeAsync().asScala
   }
 
   def write(eventRecord: EventRecord): Future[Int] = {
