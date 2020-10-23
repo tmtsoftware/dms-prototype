@@ -1,16 +1,11 @@
 package metadata.db
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import csw.database.DatabaseServiceFactory
-import csw.location.api.models.Connection.TcpConnection
-import csw.location.api.models.{ComponentId, ComponentType, TcpRegistration}
-import csw.location.api.scaladsl.LocationService
 import csw.location.client.ActorSystemFactory
-import csw.location.client.scaladsl.HttpLocationServiceFactory
 import csw.params.core.generics.Parameter
 import csw.params.events.{EventName, SystemEvent}
 import csw.prefix.models.Prefix
-import csw.prefix.models.Subsystem.{CSW, ESW}
+import csw.prefix.models.Subsystem.ESW
 import metadata.util.DbUtil
 import org.jooq.DSLContext
 
@@ -18,36 +13,32 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 object PersistApp extends App {
-
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
-  private val locationService: LocationService            = HttpLocationServiceFactory.makeLocalClient
-  private val dbConnection: TcpConnection                 = TcpConnection(ComponentId(Prefix(CSW, "DatabaseServer"), ComponentType.Service))
-  Await.result(locationService.register(TcpRegistration(dbConnection, 5432)), 15.seconds)
-  private val context: DSLContext =
-    Await.result(new DatabaseServiceFactory(system).makeDsl(locationService, "postgres"), 10.seconds)
-  private val event: SystemEvent = addPayload(SystemEvent(Prefix(ESW, "filter"), EventName("wheel5")), 5120)
+  implicit val context: DSLContext                        = DbSetup.dslContext
+  private val dbUtil                                      = new DbUtil(context)
 
-  val dbutil = new DbUtil(context)
+  private val snapshotTable = "event_snapshots"
+  Await.result(DbSetup.dropTable(snapshotTable), 5.seconds)
+  Await.result(DbSetup.createTable(snapshotTable), 5.seconds)
 
-  //CLEAN TABLE
-  Await.result(dbutil.cleanTable(), 5.seconds)
-
-  val exposures = List("exposureStart", "exposureMiddle", "exposureEnd")
+  private val event     = addPayload(SystemEvent(Prefix(ESW, "filter"), EventName("wheel5")), 5120)
+  private val exposures = List("exposureStart", "exposureMiddle", "exposureEnd")
 
   (1 to 20).foreach { i =>
-    exposures.map { obseventname =>
+    exposures.map { obsEventName =>
       val startTime = System.currentTimeMillis()
-      val snapshot  = createSnapshot(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obseventname)
-      //      dbutil.batch(snapshot)
-      //      val eventualDone = dbutil.store(snapshot)
-      Await.result(dbutil.batchVersion2(snapshot), 5.seconds)
+      val snapshot  = createSnapshot(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName)
+      //      dbUtil.batch(snapshot)
+      //      val eventualDone = dbUtil.store(snapshot)
+      Await.result(dbUtil.batchVersion2(snapshotTable, snapshot), 5.seconds)
       //      Await.result(eventualDone, 1.seconds)
       println(
         s"items: ${snapshot.length}, time : ${System.currentTimeMillis() - startTime} millis >>>>>>>>>>>writing>>>>>>>>>>>>>"
       )
     }
-
   }
+
+  system.terminate()
 
   //  (1 to 10).foreach { _ =>
   //    QueryApp.queryMetadata()

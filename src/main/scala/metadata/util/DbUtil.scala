@@ -29,8 +29,8 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
       .map(_ => Done)
   }
 
-  def batch(snapshot: Seq[EventRecord]) = {
-    var batch = dslContext.batch("INSERT INTO event_snapshots VALUES (?,?,?,?,?,?,?)")
+  def batch(table: String, snapshot: Seq[EventRecord]): Array[Int] = {
+    var batch = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
     snapshot.foreach { eventRecord =>
       batch = batch.bind(
         eventRecord.expId,
@@ -45,13 +45,13 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
     batch.execute()
   }
 
-  def batchVersion2(snapshot: Seq[EventRecord]) = {
+  def batchVersion2(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
     val parts = snapshot.sliding(500, 500).toList
-    Source(parts).mapAsyncUnordered(5)(batchAsync).run()
+    Source(parts).mapAsyncUnordered(5)(batchAsync(table, _)).run()
   }
 
-  private def batchAsync(snapshot: Seq[EventRecord]) = {
-    val batch = dslContext.batch("INSERT INTO event_snapshots VALUES (?,?,?,?,?,?,?)")
+  private def batchAsync(table: String, snapshot: Seq[EventRecord]) = {
+    val batch = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
     snapshot.foreach { eventRecord =>
       batch.bind(
         eventRecord.expId,
