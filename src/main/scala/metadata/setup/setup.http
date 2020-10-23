@@ -1,0 +1,24 @@
+###
+
+POST http://localhost:7654/post-endpoint
+Content-Type: application/json
+
+{
+  "_type" : "Register",
+  "registration" : {
+    "_type" : "TcpRegistration",
+    "connection" : {
+      "prefix" : "CSW.DatabaseServer",
+      "componentType" : "Service",
+      "connectionType" : "tcp"
+    },
+    "port" : 5432,
+    "path" : "",
+    "networkType" : {
+      "_type" : "Private"
+    },
+    "metadata" : { }
+  }
+}
+
+###

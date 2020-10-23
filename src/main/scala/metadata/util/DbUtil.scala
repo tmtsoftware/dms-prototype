@@ -4,16 +4,21 @@ import java.sql.Timestamp
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.Done
+import akka.actor.typed.ActorSystem
+import akka.stream.scaladsl.Source
 import csw.database.scaladsl.JooqExtentions.RichQuery
 import csw.params.events.{Event, EventKey}
 import io.bullet.borer.Json
+import metadata.db.EventRecord
 import org.jooq.DSLContext
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Future, blocking}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.FutureConverters.CompletionStageOps
 
-class DbUtil(dslContext: DSLContext)(implicit executionContext: ExecutionContext) {
+class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
   import csw.params.core.formats.ParamCodecs.paramEncExistential
+  import system.executionContext
 
   def cleanTable(): Future[Integer] = dslContext.query("delete from event_snapshots").executeAsyncScala()
 
@@ -22,6 +27,62 @@ class DbUtil(dslContext: DSLContext)(implicit executionContext: ExecutionContext
       .query(s"INSERT INTO event_snapshots values ${snapshotSql(expId, obsEventName, snapshot)}")
       .executeAsyncScala()
       .map(_ => Done)
+  }
+
+  def batch(snapshot: Seq[EventRecord]) = {
+    var batch = dslContext.batch("INSERT INTO event_snapshots VALUES (?,?,?,?,?,?,?)")
+    snapshot.foreach { eventRecord =>
+      batch = batch.bind(
+        eventRecord.expId,
+        eventRecord.obsEventName,
+        eventRecord.source,
+        eventRecord.eventName,
+        eventRecord.eventId,
+        eventRecord.eventTime,
+        eventRecord.paramSet
+      )
+    }
+    batch.execute()
+  }
+
+  def batchVersion2(snapshot: Seq[EventRecord]) = {
+    val parts = snapshot.sliding(500, 500).toList
+    Source(parts).mapAsyncUnordered(5)(batchAsync).run()
+  }
+
+  private def batchAsync(snapshot: Seq[EventRecord]) = {
+    val batch = dslContext.batch("INSERT INTO event_snapshots VALUES (?,?,?,?,?,?,?)")
+    snapshot.foreach { eventRecord =>
+      batch.bind(
+        eventRecord.expId,
+        eventRecord.obsEventName,
+        eventRecord.source,
+        eventRecord.eventName,
+        eventRecord.eventId,
+        eventRecord.eventTime,
+        eventRecord.paramSet
+      )
+    }
+    batch.executeAsync().asScala
+  }
+
+  def write(eventRecord: EventRecord): Future[Int] = {
+    Future {
+      blocking {
+        dslContext
+          .query(
+            "INSERT INTO event_snapshots VALUES (?,?,?,?,?,?,?)",
+            eventRecord.expId,
+            eventRecord.obsEventName,
+            eventRecord.source,
+            eventRecord.eventName,
+            eventRecord.eventId,
+            eventRecord.eventTime,
+            eventRecord.paramSet
+          )
+          .execute()
+      }
+    }
   }
 
   private def eventSql(expId: String, obsEventName: String, event: Event) =

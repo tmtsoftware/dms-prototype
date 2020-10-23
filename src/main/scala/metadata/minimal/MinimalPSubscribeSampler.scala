@@ -86,7 +86,7 @@ object MinimalPSubscribeSampler extends App {
   private val dslContext: DSLContext =
     Await.result(new DatabaseServiceFactory(system).makeDsl(locationService, "mydb"), 10.seconds)
 
-  private val util = new DbUtil(dslContext)(system.executionContext)
+  private val util = new DbUtil(dslContext)
   Await.result(util.cleanTable(), 10.seconds)
 
   private val eventService                            = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
