@@ -59,7 +59,24 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
         eventRecord.eventName,
         eventRecord.eventId,
         eventRecord.eventTime,
-        eventRecord.paramSet
+        Json.encode(eventRecord.paramSet).toByteArray
+      )
+    }
+    query.executeAsync().asScala
+  }
+
+//  def batchInsertParallelHeaderData(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
+//    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchAsyncHeaderData(table, _)).run()
+//  }
+
+  def batchAsyncHeaderData(table: String, expId: String, obsEventName: String, headersValueMap: Map[String, String]) = {
+    val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?)")
+    headersValueMap.foreach { headerEntry =>
+      query.bind(
+        expId,
+        obsEventName,
+        headerEntry._1,
+        headerEntry._2
       )
     }
     query.executeAsync().asScala

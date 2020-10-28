@@ -9,37 +9,72 @@ import csw.params.events._
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.ESW
 import io.bullet.borer.Json
+import metadata.db.{EventRecord, ParamSetData}
 import nom.tam.fits.Header
+
+import scala.collection.MapView
 
 case class HeaderReadConfig(eventKey: EventKey, paramKey: String, obsEventName: String)
 
 object SnapshotProcessor extends App {
-  val source      = Prefix(ESW, "filter")
-  val payloadSize = 1024 * 5 // 5kb
+  val source: Prefix = Prefix(ESW, "filter")
 
   // insert 3 snapshots
   val snapshotsOfExposure =
     new ConcurrentHashMap[String, ConcurrentHashMap[EventKey, Event]]() // this can be String -> EventKey ->  paramSet
 
-  List("startExposure", "midExposure", "endExposure").foreach(obsName => snapshotsOfExposure.put(obsName, createSnapshot()))
-
-  //read config to get all fits headers
-  private val path                      = getClass.getResource("/fitsHeaders.conf").getPath
-  private val configFileContent: Config = ConfigFactory.parseFile(new File(path))
-
-  val configStr                = configFileContent.getConfig("fits-keyword-config").root().render(ConfigRenderOptions.concise())
-  private val fitsHeaderConfig = Json.decode(configStr.getBytes).to[Map[String, String]].value
-
-  private val headerConfig = fitsHeaderConfig.view.mapValues { s =>
-    val (eveParam, obsEventName) = s.splitAt(s.indexOf("@"))
-    val (eventKey, paramKey)     = eveParam.splitAt(eveParam.indexOf(":"))
-    HeaderReadConfig(EventKey(eventKey), paramKey.drop(1), obsEventName.drop(1))
-  }
+  List("startExposure", "midExposure", "endExposure").foreach(obsName =>
+    snapshotsOfExposure.put(obsName, SnapshotProcessorUtil.createSnapshot(source))
+  )
 
 //  ----------------------------- process snapshot----------------------------------
 
   (1 to 50).foreach { _ =>
     val start: Long = System.currentTimeMillis()
+
+    val headerData = SnapshotProcessorUtil.getHeaderData(snapshotsOfExposure)
+
+    SnapshotProcessorUtil.generateFormattedHeader(headerData)
+
+    println("time : " + (System.currentTimeMillis() - start))
+    println(headerData.size)
+  }
+//  --------------------------------------------------------------------------------
+
+}
+
+object SnapshotProcessorUtil {
+
+  def generateFormattedHeader(headerData: Map[String, Option[String]]) = {
+    val header = new Header()
+    headerData.foreach { case (keyword, Some(data)) => header.addValue(keyword, data, "") }
+
+    val os = new ByteArrayOutputStream();
+    val ps = new PrintStream(os);
+
+    header.dumpHeader(ps)
+
+    val output = os.toString("UTF8");
+  }
+
+  def createSnapshot(source: Prefix): ConcurrentHashMap[EventKey, Event] = {
+    val snapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap[EventKey, Event]()
+
+    (1 to 2300).foreach { i =>
+      val event = SystemEvent(source, EventName(s"event_key_$i"))
+        .madd(ParamSetData.paramSet)
+        .madd(StringKey.make(s"param_key_$i").set(s"param-value-$i"))
+      snapshot.put(event.eventKey, event)
+    }
+
+    snapshot
+  }
+
+  def getHeaderData(
+      snapshotsOfExposure: ConcurrentHashMap[String, ConcurrentHashMap[EventKey, Event]]
+  ): Map[String, Option[String]] = {
+
+    val headerConfig: MapView[String, HeaderReadConfig] = readHeaderConfig()
 
     val headerData: Map[String, Option[String]] = headerConfig.map {
 
@@ -52,33 +87,36 @@ object SnapshotProcessor extends App {
           }
         (keyword, maybeString)
     }.toMap
-
-    val header = new Header()
-    headerData.foreach { case (keyword, Some(data)) => header.addValue(keyword, data, "") }
-
-    val os = new ByteArrayOutputStream();
-    val ps = new PrintStream(os);
-
-    header.dumpHeader(ps)
-
-    val output = os.toString("UTF8");
-
-    println("time : " + (System.currentTimeMillis() - start))
-    println(headerData.size)
-  //    println("-- " + output)
+    headerData
   }
-//  --------------------------------------------------------------------------------
 
-  private def createSnapshot(): ConcurrentHashMap[EventKey, Event] = {
-    val snapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap[EventKey, Event]()
+  def getHeaderData1(
+      snapshot: Map[EventKey, EventRecord]
+  ): Map[String, String] = {
+    val headerConfig: MapView[String, HeaderReadConfig] = readHeaderConfig()
+    val headerData: Map[String, String] = headerConfig.map {
+      case (keyword, config) =>
+        val value = snapshot(config.eventKey).paramSet
+          .find(p => p.keyName.equals(config.paramKey))
+          .map(_.head match { case s: String => s })
+          .get
+        (keyword, value)
+    }.toMap
+    headerData
+  }
 
-    (1 to 2300).foreach { i =>
-      val event = SystemEvent(source, EventName(s"event_key_$i"))
-        .madd(StringKey.make("payloadKey").set("0" * payloadSize), StringKey.make(s"param_key_$i").set(s"param-value-$i"))
+  private def readHeaderConfig(): MapView[String, HeaderReadConfig] = {
+    val path                      = getClass.getResource("/fitsHeaders.conf").getPath
+    val configFileContent: Config = ConfigFactory.parseFile(new File(path))
 
-      snapshot.put(event.eventKey, event)
+    val configStr        = configFileContent.getConfig("fits-keyword-config").root().render(ConfigRenderOptions.concise())
+    val fitsHeaderConfig = Json.decode(configStr.getBytes).to[Map[String, String]].value
+
+    fitsHeaderConfig.view.mapValues { s =>
+      val (eveParam, obsEventName) = s.splitAt(s.indexOf("@"))
+      val (eventKey, paramKey)     = eveParam.splitAt(eveParam.indexOf(":"))
+      HeaderReadConfig(EventKey(eventKey), paramKey.drop(1), obsEventName.drop(1))
     }
-
-    snapshot
   }
+
 }

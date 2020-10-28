@@ -35,6 +35,18 @@ object DbSetup {
          |""".stripMargin)
       .executeAsyncScala()
 
+  def createHeadersDataTable(table: String)(implicit ctx: DSLContext): Future[Integer] =
+    dslContext
+      .query(s"""
+                |CREATE TABLE $table (
+                |  exposure_id VARCHAR(50) NOT NULL,
+                |  obs_event_name VARCHAR(50) NOT NULL,
+                |  keyword VARCHAR(50) NOT NULL,
+                |  value VARCHAR(50) NOT NULL
+                |);
+                |""".stripMargin)
+      .executeAsyncScala()
+
   def dropTable(table: String)(implicit ctx: DSLContext): Future[Integer] =
     dslContext.query(s"DROP TABLE IF EXISTS $table").executeAsyncScala()
 
