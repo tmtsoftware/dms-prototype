@@ -29,7 +29,7 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
       .map(_ => Done)
   }
 
-  def batch(table: String, snapshot: Seq[EventRecord]): Array[Int] = {
+  def batchInsertSingle(table: String, snapshot: Seq[EventRecord]): Array[Int] = {
     var batch = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
     snapshot.foreach { eventRecord =>
       batch = batch.bind(
@@ -45,7 +45,7 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
     batch.execute()
   }
 
-  def batchVersion2(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
+  def batchInsertParallel(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
     Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchAsync(table, _)).run()
   }
 

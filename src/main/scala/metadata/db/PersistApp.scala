@@ -28,10 +28,7 @@ object PersistApp extends App {
     exposures.map { obsEventName =>
       val startTime = System.currentTimeMillis()
       val snapshot  = createSnapshot(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName)
-      //      dbUtil.batch(snapshot)
-      //      val eventualDone = dbUtil.store(snapshot)
-      Await.result(dbUtil.batchVersion2(snapshotTable, snapshot), 5.seconds)
-      //      Await.result(eventualDone, 1.seconds)
+      Await.result(dbUtil.batchInsertParallel(snapshotTable, snapshot), 5.seconds)
       println(
         s"items: ${snapshot.length}, time : ${System.currentTimeMillis() - startTime} millis >>>>>>>>>>>writing>>>>>>>>>>>>>"
       )
@@ -39,10 +36,6 @@ object PersistApp extends App {
   }
 
   system.terminate()
-
-  //  (1 to 10).foreach { _ =>
-  //    QueryApp.queryMetadata()
-  //  }
 
   def createSnapshot(expId: String, obsEventName: String): Seq[EventRecord] = {
     (1 to 2300).map { i =>
