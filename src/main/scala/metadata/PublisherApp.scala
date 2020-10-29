@@ -28,7 +28,7 @@ object PublisherApp extends App {
       .take(1200)
       .runForeach(_ => {
         val exposureId = s"2034A-P054-O010-WFOS-BLU1-SCI1-$counter"
-        val param      = Parameter("exposureId", KeyType.StringKey, scala.collection.mutable.ArraySeq(exposureId), NoUnits)
+        val param      = Parameter(KeyType.StringKey, "exposureId", scala.collection.mutable.ArraySeq(exposureId), NoUnits)
         println(s"Publishing observe event $counter")
         counter += 1
         publisher.publish(ObserveEvent(Prefix(ESW, "observe"), EventName("exposureStart"), Set(param)))
@@ -41,7 +41,7 @@ object PublisherApp extends App {
       .take(1200)
       .runForeach(_ => {
         val exposureId = s"2034A-P054-O010-WFOS-BLU1-SCI1-$counter"
-        val param      = Parameter("exposureId", KeyType.StringKey, scala.collection.mutable.ArraySeq(exposureId), NoUnits)
+        val param      = Parameter(KeyType.StringKey, "exposureId", scala.collection.mutable.ArraySeq(exposureId), NoUnits)
         println(s"Publishing observe event $counter")
         counter += 1
         publisher.publish(ObserveEvent(Prefix(ESW, "observe"), EventName("exposureEnd"), Set(param)))

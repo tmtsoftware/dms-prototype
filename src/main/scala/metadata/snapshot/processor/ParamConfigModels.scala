@@ -1,6 +1,12 @@
 package metadata.snapshot.processor
 
-case class KeywordConfig(keyword: String, obsEventName: String, eventKey: String, paramPath: List[ParamPath], jsonPath: String)
+case class KeywordConfig(
+    keyword: String,
+    obsEventName: String,
+    eventKey: String,
+    paramPath: List[ParamPath],
+    jsonPath: Option[String]
+)
 
 object KeywordConfig {
   def apply(
@@ -9,7 +15,14 @@ object KeywordConfig {
       eventKey: String,
       paramPath: String,
       jsonPath: String
-  ): KeywordConfig = new KeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), jsonPath)
+  ): KeywordConfig = new KeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(jsonPath))
+
+  def apply(
+      keyword: String,
+      obsEventName: String,
+      eventKey: String,
+      paramPath: String
+  ): KeywordConfig = new KeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), None)
 }
 
 case class ParamPath(path: String, index: Int = 0)

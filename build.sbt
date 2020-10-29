@@ -6,7 +6,7 @@ scalaVersion := "2.13.3"
 
 resolvers += "jitpack" at "https://jitpack.io"
 
-val cswVersion = "098d6fc"
+val cswVersion = "4a67b51"
 
 libraryDependencies ++= Seq(
   "com.github.tmtsoftware.csw" %% "csw-location-client" % cswVersion,

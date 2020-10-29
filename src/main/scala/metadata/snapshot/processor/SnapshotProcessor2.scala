@@ -1,10 +1,12 @@
 package metadata.snapshot.processor
 
 import com.jayway.jsonpath.JsonPath
-import csw.params.core.generics.KeyType.{IntKey, RaDecKey, StructKey}
+import csw.params.core.generics.KeyType._
 import csw.params.core.generics.Parameter
-import csw.params.core.models.{RaDec, Struct}
-import io.bullet.borer.Json
+import csw.params.core.models.{ArrayData, RaDec, Struct}
+import io.bullet.borer.{Encoder, Json}
+
+import scala.collection.mutable
 
 object SnapshotProcessor2 extends App {
   private val paramSet: Set[Parameter[_]] = Set(
@@ -31,7 +33,9 @@ object SnapshotProcessor2 extends App {
         )
       ),
     RaDecKey.make("radec6").set(RaDec(333, 444)),
-    IntKey.make("int").set(555, 666)
+    IntKey.make("int").set(555, 666),
+    StringKey.make("string").set("abc", "def"),
+    IntArrayKey.make("intArray").set(ArrayData(mutable.ArraySeq(1, 2, 333)))
   )
 
   val keywordConfig = KeywordConfig(
@@ -54,13 +58,30 @@ object SnapshotProcessor2 extends App {
     "AZIMUTH",
     "endExposure",
     "esw.filter_wheel.set_temp",
-    "int[1]",
-    ""
+    "int[1]"
+  )
+  val keywordConfig4 = KeywordConfig(
+    "AZIMUTH",
+    "endExposure",
+    "esw.filter_wheel.set_temp",
+    "string"
+  )
+
+  val keywordConfig5 = KeywordConfig(
+    "AZIMUTH",
+    "endExposure",
+    "esw.filter_wheel.set_temp",
+    "intArray",
+    "[2]"
   )
 
   def getParam(path: List[ParamPath], paramSet: Set[Parameter[_]]): Option[Parameter[_]] = {
     path match {
-      case head :: Nil => paramSet.find(_.keyName == head.path)
+      case head :: Nil =>
+        paramSet.find(_.keyName == head.path).map { p =>
+          val paramOfAny = p.asInstanceOf[Parameter[Any]]
+          paramOfAny.copy(items = mutable.ArraySeq(paramOfAny.items(head.index)))
+        }
       case head :: next =>
         paramSet.find(_.keyName == head.path).flatMap { param =>
           param.get(head.index).flatMap(x => getParam(next, x.asInstanceOf[Struct].paramSet))
@@ -68,26 +89,22 @@ object SnapshotProcessor2 extends App {
     }
   }
 
-  //  def extractValueFromParam(encodedParam: String, jsonPath: String): java.util.List[String] =
-  //    JsonPath.read(s"$encodedParam", "$[0].*.values[1]" + jsonPath) // add index too
-
-  def extractValueFromParam1(encodedParam: String, config: KeywordConfig): java.util.List[String] = {
-    val jsonPath = "$[0].*.values[" + config.paramPath.last.index + "]" + config.jsonPath
-//    println(jsonPath)
-    JsonPath.read(s"$encodedParam", jsonPath) // add index too
+  def extractValueFromParam(encodedParam: String, config: KeywordConfig) = {
+    val jsonPathWithIndex = "$[0]" + config.jsonPath.getOrElse("") // take 0th as list has only one item.
+    JsonPath.read[Any](s"$encodedParam", jsonPathWithIndex)
   }
 
-  def getHeader(keywordConfig: KeywordConfig) = {
-    import csw.params.core.formats.ParamCodecs._
-
+  def getHeader(keywordConfig: KeywordConfig) =
     getParam(keywordConfig.paramPath, paramSet).map { p =>
-      val value: Set[Parameter[_]] = Set(p)
-      val encodedParam             = Json.encode(value).toUtf8String
-      extractValueFromParam1(encodedParam, keywordConfig)
-    }
-  }
+      val en: Encoder[mutable.ArraySeq[Any]] = p.keyType._arraySeqCodec.encoder.asInstanceOf[Encoder[mutable.ArraySeq[Any]]]
+      val encodedParamValues                 = Json.encode(p.items.asInstanceOf[mutable.ArraySeq[Any]])(en).toUtf8String
 
-  println("expected 111 = actual ", getHeader(keywordConfig))
-  println("expected 444 = actual ", getHeader(keywordConfig2))
-  println("expected 666 = actual ", getHeader(keywordConfig3))
+      extractValueFromParam(encodedParamValues, keywordConfig)
+    }
+
+  println("expected 111 = actual " + getHeader(keywordConfig))
+  println("expected 444 = actual " + getHeader(keywordConfig2))
+  println("expected 666 = actual " + getHeader(keywordConfig3))
+  println("expected abc = actual " + getHeader(keywordConfig4))
+  println("expected 333 = actual " + getHeader(keywordConfig5))
 }
