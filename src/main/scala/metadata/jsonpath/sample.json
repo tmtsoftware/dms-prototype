@@ -1,21 +1,25 @@
 {
   "paramSet": [
     {
-      "keyName": "S1",
+      "keyType": "StructKey",
+      "keyName": "Struct1",
       "values": [
         {
           "paramSet": [
             {
-              "keyName": "S11",
+              "keyType": "StructKey",
+              "keyName": "Struct11",
               "values": [
                 {
                   "paramSet": [
                     {
-                      "keyName": "S111",
+                      "keyType": "StructKey",
+                      "keyName": "Struct111",
                       "values": [
                         {
                           "paramSet": [
                             {
+                              "keyType": "AltAzCoordKey",
                               "keyName": "Azimuth",
                               "values": [
                                 {
@@ -28,8 +32,12 @@
                               "units": "NoUnits"
                             },
                             {
+                              "keyType": "IntKey",
                               "keyName": "RaDec",
-                              "values": [11, 22],
+                              "values": [
+                                1,
+                                2
+                              ],
                               "units": "NoUnits"
                             }
                           ]
@@ -47,13 +55,18 @@
         {
           "paramSet": [
             {
-              "keyName": "S12",
+              "keyType": "StructKey",
+              "keyName": "Struct12",
               "values": [
                 {
                   "paramSet": [
                     {
+                      "keyType": "IntKey",
                       "keyName": "RaDec2",
-                      "values": [111, 222],
+                      "values": [
+                        3,
+                        4
+                      ],
                       "units": "NoUnits"
                     }
                   ]
@@ -67,8 +80,12 @@
       "units": "NoUnits"
     },
     {
+      "keyType": "IntKey",
       "keyName": "RaDec3",
-      "values": [1111, 2222],
+      "values": [
+        5,
+        6
+      ],
       "units": "NoUnits"
     }
   ]
