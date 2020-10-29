@@ -62,10 +62,10 @@ object PersistHeaderKeywords extends App {
         s"select * from $tableName where exposure_id='$expId'"
       )
 
-    val headerData    = getDatabaseQuery.fetchAsyncScala[(String, String, String, String)]
-    val headersFromDb = Await.result(headerData, 10.seconds)
-    SnapshotProcessorUtil.generateFormattedHeader(headersFromDb.map(h => (h._3 -> Some(h._4))).toMap)
-    headersFromDb
+    val headerData       = getDatabaseQuery.fetchAsyncScala[(String, String, String, String)]
+    val headersFromDb    = Await.result(headerData, 10.seconds)
+    val formattedHeaders = SnapshotProcessorUtil.generateFormattedHeader(headersFromDb.map(h => (h._3 -> Some(h._4))).toMap)
+    formattedHeaders
   }
 
   (1 to counter).foreach { i =>
@@ -73,7 +73,7 @@ object PersistHeaderKeywords extends App {
 
     val headers = queryHeaders(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", context, headersDataTable)
     println(
-      s"Headers: ${headers.size}, time : ${System.currentTimeMillis() - startTime} millis <<<<<<<<<<<<<<<<reading<<<<<<<<<<<<<<<<"
+      s"Headers: ${headers.lines().count()}, time : ${System.currentTimeMillis() - startTime} millis <<<<<<<<<<<<<<<<reading<<<<<<<<<<<<<<<<"
     )
   }
 }

@@ -34,7 +34,7 @@ object SnapshotProcessor extends App {
 
     val headerData = SnapshotProcessorUtil.getHeaderData(snapshotsOfExposure)
 
-    SnapshotProcessorUtil.generateFormattedHeader(headerData)
+    val formattedHeaders = SnapshotProcessorUtil.generateFormattedHeader(headerData)
 
     println("time : " + (System.currentTimeMillis() - start))
     println(headerData.size)
@@ -54,7 +54,8 @@ object SnapshotProcessorUtil {
 
     header.dumpHeader(ps)
 
-    val output = os.toString("UTF8");
+    val output = os.toString("UTF8")
+    output
   }
 
   def createSnapshot(source: Prefix): ConcurrentHashMap[EventKey, Event] = {
