@@ -6,7 +6,7 @@ import csw.location.client.ActorSystemFactory
 import csw.params.events.{EventKey, EventName, SystemEvent}
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.ESW
-import metadata.snapshot.processor.SnapshotProcessorUtil
+import metadata.snapshot.processor.{HeaderConfig, SnapshotProcessorUtil}
 import metadata.util.DbUtil
 import org.jooq.DSLContext
 
@@ -40,40 +40,46 @@ object PersistHeaderKeywords extends App {
         EventService.createSnapshot(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, event)
 
       //PERSIST SNAPSHOT
-      Await.result(dbUtil.batchInsertParallel(snapshotTable, snapshot.values.toList), 5.seconds)
+      Await.result(dbUtil.batchInsertParallelSnapshots(snapshotTable, snapshot.values.toList), 5.seconds)
 
       //PERSIST KEYWORDS
-      val headersValueMap: Map[String, String] = SnapshotProcessorUtil.getHeaderData1(snapshot)
+      val headersValues: List[(String, String)] = SnapshotProcessorUtil.getHeaderData1(snapshot)
       Await.result(
-        dbUtil.batchAsyncHeaderData(headersDataTable, s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, headersValueMap),
+        dbUtil.batchInsertHeaderData(headersDataTable, s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, headersValues),
         5.seconds
       )
 
       println(
-        s"Rows: ${snapshot.size}, Headers: ${headersValueMap.size}, time : ${System.currentTimeMillis() - startTime} millis >>>>>>>>>>>writing>>>>>>>>>>>>>"
+        s"Rows: ${snapshot.size}, Headers: ${headersValues.size}, time : ${System.currentTimeMillis() - startTime} millis >>>>>>>>>>>writing>>>>>>>>>>>>>"
       )
     }
 
   }
 
-  def queryHeaders(expId: String, dslContext: DSLContext, tableName: String)(implicit executionContext: ExecutionContext) = {
+  def queryHeaders(expId: String, dslContext: DSLContext, headers: List[HeaderConfig], tableName: String)(implicit
+      executionContext: ExecutionContext
+  ) = {
     val getDatabaseQuery =
       dslContext.resultQuery(
         s"select * from $tableName where exposure_id='$expId'"
       )
 
-    val headerData       = getDatabaseQuery.fetchAsyncScala[(String, String, String, String)]
-    val headersFromDb    = Await.result(headerData, 10.seconds)
-    val formattedHeaders = SnapshotProcessorUtil.generateFormattedHeader(headersFromDb.map(h => (h._3 -> Some(h._4))).toMap)
+    val headerData    = getDatabaseQuery.fetchAsyncScala[(String, String, String, String)]
+    val headersFromDb = Await.result(headerData, 10.seconds)
+    val formattedHeaders =
+      SnapshotProcessorUtil.generateFormattedHeader(headers, headersFromDb.map(h => (h._3 -> Some(h._4))).toMap)
     formattedHeaders
   }
+
+  val headers: List[HeaderConfig] = SnapshotProcessorUtil.readHeaderConfigFlat()
 
   (1 to counter).foreach { i =>
     val startTime = System.currentTimeMillis()
 
-    val headers = queryHeaders(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", context, headersDataTable)
+    val headersFromDb: String = queryHeaders(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", context, headers, headersDataTable)
+    println(headersFromDb)
     println(
-      s"Headers: ${headers.lines().count()}, time : ${System.currentTimeMillis() - startTime} millis <<<<<<<<<<<<<<<<reading<<<<<<<<<<<<<<<<"
+      s"Headers: ${headersFromDb.lines().count()}, time : ${System.currentTimeMillis() - startTime} millis <<<<<<<<<<<<<<<<reading<<<<<<<<<<<<<<<<"
     )
   }
 }

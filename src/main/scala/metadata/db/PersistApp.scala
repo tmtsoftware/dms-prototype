@@ -27,7 +27,7 @@ object PersistApp extends App {
     exposures.map { obsEventName =>
       val startTime = System.currentTimeMillis()
       val snapshot  = EventService.createSnapshot(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, event)
-      Await.result(dbUtil.batchInsertParallel(snapshotTable, snapshot.values.toList), 5.seconds)
+      Await.result(dbUtil.batchInsertParallelSnapshots(snapshotTable, snapshot.values.toList), 5.seconds)
       println(
         s"items: ${snapshot.size}, time : ${System.currentTimeMillis() - startTime} millis >>>>>>>>>>>writing>>>>>>>>>>>>>"
       )

@@ -30,7 +30,7 @@ class MinimalPSubscribeSampler(
   import actorSystem.executionContext
 
   val eventSubscriber = eventService.defaultSubscriber
-  var currentState    = new ConcurrentHashMap[EventKey, Event]() // mutable map with variable ref
+  val currentState    = new ConcurrentHashMap[EventKey, Event]()
   val expKey          = StringKey.make("exposureId")
 
   def snapshot(obsEvent: Event): Future[Done] = {
@@ -39,7 +39,7 @@ class MinimalPSubscribeSampler(
     val lastSnapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(currentState)
     val exposureId                                       = obsEvent.asInstanceOf[ObserveEvent](expKey).head
 
-    val storeInDb = dbUtil.store(exposureId, obsEvent.eventName.name, lastSnapshot)
+    val storeInDb: Future[Done] = dbUtil.store(exposureId, obsEvent.eventName.name, lastSnapshot)
     storeInDb.onComplete { _ =>
       val endTime      = System.currentTimeMillis()
       val snapshotTime = endTime - startTime
@@ -55,7 +55,7 @@ class MinimalPSubscribeSampler(
       .subscribe(Set(EventKey("esw.observe.exposureStart"), EventKey("esw.observe.exposureEnd")))
       .drop(5)
       .take(1000)
-      .mapAsync(8)(snapshot)
+      .mapAsync(10)(snapshot) //BLU , RED
       .run()
 
   def start(): Future[Done] = {

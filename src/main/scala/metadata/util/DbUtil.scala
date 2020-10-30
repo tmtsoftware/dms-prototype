@@ -45,11 +45,11 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
     batch.execute()
   }
 
-  def batchInsertParallel(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
-    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchAsync(table, _)).run()
+  def batchInsertParallelSnapshots(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
+    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchInsertSnapshots(table, _)).run()
   }
 
-  private def batchAsync(table: String, batch: Seq[EventRecord]) = {
+  private def batchInsertSnapshots(table: String, batch: Seq[EventRecord]) = {
     val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
     batch.foreach { eventRecord =>
       query.bind(
@@ -62,14 +62,10 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
         Json.encode(eventRecord.paramSet).toByteArray
       )
     }
-    query.executeAsync().asScala
+    blocking { query.executeAsync().asScala }
   }
 
-//  def batchInsertParallelHeaderData(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
-//    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchAsyncHeaderData(table, _)).run()
-//  }
-
-  def batchAsyncHeaderData(table: String, expId: String, obsEventName: String, headersValueMap: Map[String, String]) = {
+  def batchInsertHeaderData(table: String, expId: String, obsEventName: String, headersValueMap: List[(String, String)]) = {
     val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?)")
     headersValueMap.foreach { headerEntry =>
       query.bind(
