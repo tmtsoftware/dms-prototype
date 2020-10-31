@@ -51,11 +51,11 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
         expId,
         obsEventName,
         headerEntry._1,
-        headerEntry._2.getOrElse("not found")
+        headerEntry._2.getOrElse("not found") //FIXME edge case
       )
     }
     if (headersValueMap.nonEmpty) query.executeAsync().asScala
-    else Future.successful(unit)
+    else Future.successful(unit) ///FIXME edge case
   }
 
 }

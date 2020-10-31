@@ -6,12 +6,13 @@ import java.util.concurrent.ConcurrentHashMap
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.params.events._
 import csw.prefix.models.Subsystem
+import csw.prefix.models.Subsystem.{IRIS, WFOS}
 import metadata.snapshot.processor.HeaderConfig.{ComplexConfig, SimpleConfig}
 import nom.tam.fits.Header
 
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, ConcurrentMapHasAsScala}
 
-sealed trait HeaderConfig
+sealed trait HeaderConfig extends Product
 object HeaderConfig {
   final case class ComplexConfig(keyword: String, obsEventName: String, eventKey: String, paramKey: String, jsonPath: String)
       extends HeaderConfig
@@ -36,9 +37,9 @@ object SnapshotProcessorUtil {
 
   def getHeaderData(
       snapshotObsEventName: String,
-      snapshot: ConcurrentHashMap[EventKey, Event]
+      snapshot: ConcurrentHashMap[EventKey, Event],
+      headerConfigs: List[HeaderConfig]
   ): List[(String, Option[String])] = {
-    val headerConfigs: List[HeaderConfig] = loadHeaderConfig()
     val headerData: List[(String, Option[String])] = headerConfigs
       .filter {
         case ComplexConfig(_, configObsEventName, _, _, _) if snapshotObsEventName == configObsEventName => true
@@ -58,25 +59,29 @@ object SnapshotProcessorUtil {
     headerData
   }
 
-  def loadHeaderConfig(): List[HeaderConfig] = {
-    val baseConfigPath           = getClass.getResource("/base-header-mappings.conf").getPath
-    val instrumentConfigPath     = getClass.getResource(s"/IRIS-header-mappings.conf").getPath
-    val baseConfig: Config       = ConfigFactory.parseFile(new File(baseConfigPath))
-    val instrumentConfig: Config = ConfigFactory.parseFile(new File(instrumentConfigPath)).withFallback(baseConfig).resolve()
-    val keywords                 = instrumentConfig.root().keySet().asScala.toList
-    keywords.map { keyword =>
-      val keywordConfig: Config = instrumentConfig.getConfig(keyword)
-      if (keywordConfig.hasPath("value")) {
-        SimpleConfig(keyword, keywordConfig.getString("value"))
+  def loadHeaderConfig(): Map[Subsystem, List[HeaderConfig]] = {
+    val subsystems: List[Subsystem] = List(IRIS, WFOS)
+    subsystems.map { subsystem =>
+      val baseConfigPath           = getClass.getResource("/base-header-mappings.conf").getPath
+      val instrumentConfigPath     = getClass.getResource(s"/${subsystem.name}-header-mappings.conf").getPath
+      val baseConfig: Config       = ConfigFactory.parseFile(new File(baseConfigPath))
+      val instrumentConfig: Config = ConfigFactory.parseFile(new File(instrumentConfigPath)).withFallback(baseConfig).resolve()
+      val keywords                 = instrumentConfig.root().keySet().asScala.toList
+      val headerConfigList = keywords.map { keyword =>
+        val keywordConfig: Config = instrumentConfig.getConfig(keyword)
+        if (keywordConfig.hasPath("value")) {
+          SimpleConfig(keyword, keywordConfig.getString("value"))
+        }
+        else {
+          val obsEventName = keywordConfig.getString("obs-event-name")
+          val eventKey     = keywordConfig.getString("event-key")
+          val paramKey     = keywordConfig.getString("param-key")
+          val jsonPath     = keywordConfig.getString("json-path")
+          ComplexConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
+        }
       }
-      else {
-        val obsEventName = keywordConfig.getString("obs-event-name")
-        val eventKey     = keywordConfig.getString("event-key")
-        val paramKey     = keywordConfig.getString("param-key")
-        val jsonPath     = keywordConfig.getString("json-path")
-        ComplexConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
-      }
-    }
+      subsystem -> headerConfigList
+    }.toMap
   }
 
   def loadHeaderList(): Map[Subsystem, List[String]] = {

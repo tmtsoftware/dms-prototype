@@ -6,9 +6,10 @@ import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import csw.database.scaladsl.JooqExtentions.RichResultQuery
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey, EventName, SystemEvent}
-import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.{ESW, IRIS}
-import metadata.snapshot.processor.SnapshotProcessorUtil
+import csw.prefix.models.{Prefix, Subsystem}
+import metadata.snapshot.processor.SnapshotProcessorUtil.loadHeaderConfig
+import metadata.snapshot.processor.{HeaderConfig, SnapshotProcessorUtil}
 import metadata.util.DbUtil
 import org.jooq.DSLContext
 
@@ -34,12 +35,16 @@ object MetadataCollectionApp extends App {
   private val event     = SystemEvent(prefix, EventName("wheel5"))
   private val exposures = List("exposureStart", "exposureMiddle", "exposureEnd")
 
-  private val counter = 10
+  val headerConfigs: Map[Subsystem, List[HeaderConfig]] = loadHeaderConfig()
+
+  private val counter              = 10
+  private val subsystem: Subsystem = IRIS
+
   (1 to counter).foreach { i =>
     exposures.foreach { obsEventName =>
       val startTime = System.currentTimeMillis()
 
-      val expId = s"2034A-P054-O010-WFOS-BLU1-SCI1-$i"
+      val expId = s"2034A-P054-O010-${subsystem.name}-BLU1-SCI1-$i"
       //CAPTURE SNAPSHOT
       val snapshot: ConcurrentHashMap[EventKey, Event] =
         EventService.createSnapshot(event)
@@ -51,9 +56,10 @@ object MetadataCollectionApp extends App {
       )
 
       //PERSIST KEYWORDS
-      val headersValues: List[(String, Option[String])] = SnapshotProcessorUtil.getHeaderData(obsEventName, snapshot)
+      val headersValues: List[(String, Option[String])] =
+        SnapshotProcessorUtil.getHeaderData(obsEventName, snapshot, headerConfigs(subsystem))
       Await.result(
-        dbUtil.batchInsertHeaderData(headersDataTable, s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, headersValues),
+        dbUtil.batchInsertHeaderData(headersDataTable, expId, obsEventName, headersValues),
         5.seconds
       )
 
@@ -79,12 +85,13 @@ object MetadataCollectionApp extends App {
     formattedHeaders
   }
 
-  val keywords: Seq[String] = SnapshotProcessorUtil.loadHeaderList()(IRIS)
+  val keywords: Seq[String] = SnapshotProcessorUtil.loadHeaderList()(subsystem)
 
   (1 to counter).foreach { i =>
     val startTime = System.currentTimeMillis()
 
-    val headersFromDb: String = queryHeaders(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", context, keywords, headersDataTable)
+    val expId                 = s"2034A-P054-O010-${subsystem.name}-BLU1-SCI1-$i"
+    val headersFromDb: String = queryHeaders(expId, context, keywords, headersDataTable)
 //    println(headersFromDb)
     println(
       s"Headers: ${headersFromDb.lines().count()}, time : ${System.currentTimeMillis() - startTime} millis <<<<<<<<<<<<<<<<reading<<<<<<<<<<<<<<<<"
