@@ -21,6 +21,7 @@ import org.jooq.DSLContext
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class MinimalPSubscribeSampler(
     globalSubscriber: RedisGlobalSubscriber,
@@ -39,7 +40,13 @@ class MinimalPSubscribeSampler(
     val lastSnapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(currentState)
     val exposureId                                       = obsEvent.asInstanceOf[ObserveEvent](expKey).head
 
-    val storeInDb: Future[Done] = dbUtil.store(exposureId, obsEvent.eventName.name, lastSnapshot)
+    val tableName = "event_snapshots"
+    val storeInDb: Future[Done] = dbUtil.batchInsertParallelSnapshots(
+      exposureId,
+      obsEvent.eventName.name,
+      lastSnapshot.values().asScala.toList,
+      tableName
+    )
     storeInDb.onComplete { _ =>
       val endTime      = System.currentTimeMillis()
       val snapshotTime = endTime - startTime

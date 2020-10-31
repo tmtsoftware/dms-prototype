@@ -16,7 +16,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-object PersistHeaderKeywords extends App {
+object MetadataCollectionApp extends App {
 
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
   import system.executionContext
@@ -51,7 +51,7 @@ object PersistHeaderKeywords extends App {
       )
 
       //PERSIST KEYWORDS
-      val headersValues: List[(String, Option[String])] = SnapshotProcessorUtil.getHeaderData1(obsEventName, snapshot)
+      val headersValues: List[(String, Option[String])] = SnapshotProcessorUtil.getHeaderData(obsEventName, snapshot)
       Await.result(
         dbUtil.batchInsertHeaderData(headersDataTable, s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, headersValues),
         5.seconds
@@ -79,7 +79,7 @@ object PersistHeaderKeywords extends App {
     formattedHeaders
   }
 
-  val keywords: Seq[String] = SnapshotProcessorUtil.readHeaderList()(IRIS)
+  val keywords: Seq[String] = SnapshotProcessorUtil.loadHeaderList()(IRIS)
 
   (1 to counter).foreach { i =>
     val startTime = System.currentTimeMillis()
