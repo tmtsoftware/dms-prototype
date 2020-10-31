@@ -10,6 +10,7 @@ import org.jooq.DSLContext
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object PersistApp extends App {
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
@@ -26,8 +27,12 @@ object PersistApp extends App {
   (1 to 20).foreach { i =>
     exposures.map { obsEventName =>
       val startTime = System.currentTimeMillis()
-      val snapshot  = EventService.createSnapshot(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, event)
-      Await.result(dbUtil.batchInsertParallelSnapshots(snapshotTable, snapshot.values.toList), 5.seconds)
+      val expId     = s"2034A-P054-O010-WFOS-BLU1-SCI1-$i"
+      val snapshot  = EventService.createSnapshot(event)
+      Await.result(
+        dbUtil.batchInsertParallelSnapshots(expId, obsEventName, snapshot.values().asScala.toList, snapshotTable),
+        5.seconds
+      )
       println(
         s"items: ${snapshot.size}, time : ${System.currentTimeMillis() - startTime} millis >>>>>>>>>>>writing>>>>>>>>>>>>>"
       )

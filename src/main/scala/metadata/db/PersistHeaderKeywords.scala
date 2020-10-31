@@ -1,17 +1,20 @@
 package metadata.db
 
+import java.util.concurrent.ConcurrentHashMap
+
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import csw.database.scaladsl.JooqExtentions.RichResultQuery
 import csw.location.client.ActorSystemFactory
-import csw.params.events.{EventKey, EventName, SystemEvent}
+import csw.params.events.{Event, EventKey, EventName, SystemEvent}
 import csw.prefix.models.Prefix
-import csw.prefix.models.Subsystem.ESW
-import metadata.snapshot.processor.{HeaderConfig, SnapshotProcessorUtil}
+import csw.prefix.models.Subsystem.{ESW, IRIS}
+import metadata.snapshot.processor.SnapshotProcessorUtil
 import metadata.util.DbUtil
 import org.jooq.DSLContext
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object PersistHeaderKeywords extends App {
 
@@ -27,7 +30,8 @@ object PersistHeaderKeywords extends App {
   Await.result(DbSetup.createTable(snapshotTable), 5.seconds)
   Await.result(DbSetup.createHeadersDataTable(headersDataTable), 5.seconds)
 
-  private val event     = SystemEvent(Prefix(ESW, "filter"), EventName("wheel5"))
+  private val prefix    = Prefix(ESW, "filter")
+  private val event     = SystemEvent(prefix, EventName("wheel5"))
   private val exposures = List("exposureStart", "exposureMiddle", "exposureEnd")
 
   private val counter = 10
@@ -35,15 +39,19 @@ object PersistHeaderKeywords extends App {
     exposures.foreach { obsEventName =>
       val startTime = System.currentTimeMillis()
 
+      val expId = s"2034A-P054-O010-WFOS-BLU1-SCI1-$i"
       //CAPTURE SNAPSHOT
-      val snapshot: Map[EventKey, EventRecord] =
-        EventService.createSnapshot(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, event)
+      val snapshot: ConcurrentHashMap[EventKey, Event] =
+        EventService.createSnapshot(event)
 
       //PERSIST SNAPSHOT
-      Await.result(dbUtil.batchInsertParallelSnapshots(snapshotTable, snapshot.values.toList), 5.seconds)
+      Await.result(
+        dbUtil.batchInsertParallelSnapshots(expId, obsEventName, snapshot.values().asScala.toList, snapshotTable),
+        5.seconds
+      )
 
       //PERSIST KEYWORDS
-      val headersValues: List[(String, String)] = SnapshotProcessorUtil.getHeaderData1(snapshot)
+      val headersValues: List[(String, Option[String])] = SnapshotProcessorUtil.getHeaderData1(obsEventName, snapshot)
       Await.result(
         dbUtil.batchInsertHeaderData(headersDataTable, s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, headersValues),
         5.seconds
@@ -56,7 +64,7 @@ object PersistHeaderKeywords extends App {
 
   }
 
-  def queryHeaders(expId: String, dslContext: DSLContext, headers: List[HeaderConfig], tableName: String)(implicit
+  def queryHeaders(expId: String, dslContext: DSLContext, keywords: Seq[String], tableName: String)(implicit
       executionContext: ExecutionContext
   ) = {
     val getDatabaseQuery =
@@ -67,17 +75,17 @@ object PersistHeaderKeywords extends App {
     val headerData    = getDatabaseQuery.fetchAsyncScala[(String, String, String, String)]
     val headersFromDb = Await.result(headerData, 10.seconds)
     val formattedHeaders =
-      SnapshotProcessorUtil.generateFormattedHeader(headers, headersFromDb.map(h => (h._3 -> Some(h._4))).toMap)
+      SnapshotProcessorUtil.generateFormattedHeader(keywords, headersFromDb.map(h => (h._3 -> Some(h._4))).toMap)
     formattedHeaders
   }
 
-  val headers: List[HeaderConfig] = SnapshotProcessorUtil.readHeaderConfigFlat()
+  val keywords: Seq[String] = SnapshotProcessorUtil.readHeaderList()(IRIS)
 
   (1 to counter).foreach { i =>
     val startTime = System.currentTimeMillis()
 
-    val headersFromDb: String = queryHeaders(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", context, headers, headersDataTable)
-    println(headersFromDb)
+    val headersFromDb: String = queryHeaders(s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", context, keywords, headersDataTable)
+//    println(headersFromDb)
     println(
       s"Headers: ${headersFromDb.lines().count()}, time : ${System.currentTimeMillis() - startTime} millis <<<<<<<<<<<<<<<<reading<<<<<<<<<<<<<<<<"
     )

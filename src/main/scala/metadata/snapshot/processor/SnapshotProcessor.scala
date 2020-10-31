@@ -6,19 +6,25 @@ import java.util.concurrent.ConcurrentHashMap
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events._
-import csw.prefix.models.Prefix
-import csw.prefix.models.Subsystem.ESW
+import csw.prefix.models.Subsystem.{ESW, IRIS}
+import csw.prefix.models.{Prefix, Subsystem}
 import io.bullet.borer.Json
-import metadata.db.{EventRecord, ParamSetData}
-import metadata.snapshot.processor.SnapshotProcessorUtil.mockHeaderList
+import metadata.db.ParamSetData
+import metadata.snapshot.processor.HeaderConfig.{ComplexConfig, SimpleConfig}
+import metadata.snapshot.processor.SnapshotProcessorUtil.readHeaderList
 import nom.tam.fits.Header
 
 import scala.collection.MapView
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, ConcurrentMapHasAsScala}
 
 case class HeaderReadConfig(eventKey: EventKey, paramKey: String, obsEventName: String)
-case class HeaderConfig(keyword: String, obsEventName: String, eventKey: String, paramKey: String, jsonPath: String)
 
+sealed trait HeaderConfig
+object HeaderConfig {
+  final case class ComplexConfig(keyword: String, obsEventName: String, eventKey: String, paramKey: String, jsonPath: String)
+      extends HeaderConfig
+  final case class SimpleConfig(keyword: String, value: String) extends HeaderConfig
+}
 object SnapshotProcessor extends App {
   val source: Prefix = Prefix(ESW, "filter")
 
@@ -32,13 +38,16 @@ object SnapshotProcessor extends App {
 
 //  ----------------------------- process snapshot----------------------------------
 
+  private val subsystem      = IRIS
+  val keywords: List[String] = readHeaderList()(subsystem)
+
   (1 to 50).foreach { _ =>
     val start: Long = System.currentTimeMillis()
 
-    val keywords: List[HeaderConfig] = mockHeaderList()
-    val headerData                   = SnapshotProcessorUtil.getHeaderData(snapshotsOfExposure)
+    val headerData = SnapshotProcessorUtil.getHeaderData(snapshotsOfExposure)
 
     val formattedHeaders = SnapshotProcessorUtil.generateFormattedHeader(keywords, headerData)
+    println(formattedHeaders)
     println("time : " + (System.currentTimeMillis() - start))
     println(headerData.size)
   }
@@ -48,13 +57,11 @@ object SnapshotProcessor extends App {
 
 object SnapshotProcessorUtil {
 
-  def generateFormattedHeader(headers: List[HeaderConfig], headerData: Map[String, Option[String]]) = {
+  def generateFormattedHeader(keywords: Seq[String], headerData: Map[String, Option[String]]) = {
     val fitsHeader = new Header()
-    headers.foreach { header =>
-      val maybeMaybeString = headerData.get(header.keyword).flatten
-      fitsHeader.addValue(header.keyword, maybeMaybeString.get, "")
+    keywords.foreach { keyword =>
+      headerData.get(keyword).flatten.map { fitsHeader.addValue(keyword, _, "") }
     }
-//    headerData.foreach { case (keyword, Some(data)) => fitsHeader.addValue(keyword, data, "") }
 
     val os = new ByteArrayOutputStream();
     val ps = new PrintStream(os);
@@ -99,24 +106,31 @@ object SnapshotProcessorUtil {
   }
 
   def getHeaderData1(
-      snapshot: Map[EventKey, EventRecord]
-  ): List[(String, String)] = {
-    val headerConfigs: List[HeaderConfig] = readHeaderConfigFlat()
-    val headerData: List[(String, String)] = headerConfigs.map { headerConfig: HeaderConfig =>
-      val value = snapshot
-        .get(EventKey(headerConfig.eventKey))
-        .map(e => e.paramSet)
-        .get
-        .find(p => p.keyName.equals(headerConfig.paramKey))
-        .map(_.head match { case s: String => s })
-        .get
-      (headerConfig.keyword, value)
-    }
+      snapshotObsEventName: String,
+      snapshot: ConcurrentHashMap[EventKey, Event]
+  ): List[(String, Option[String])] = {
+    val headerConfigs: List[HeaderConfig] = readHeaderConfigNested()
+    val headerData: List[(String, Option[String])] = headerConfigs
+      .filter {
+        case ComplexConfig(_, configObsEventName, _, _, _) if snapshotObsEventName == configObsEventName => true
+        case SimpleConfig(_, _) if snapshotObsEventName == "exposureStart"                               => true
+        case _                                                                                           => false
+      }
+      .map {
+        case ComplexConfig(keyword, _, eventKey, paramKey, jsonPath) =>
+          val value = snapshot.asScala
+            .get(EventKey(eventKey))
+            .map(e => e.paramSet)
+            .flatMap(_.find(p => p.keyName.equals(paramKey)))
+            .map(_.head match { case s: String => s })
+          (keyword, value)
+        case SimpleConfig(keyword, value) => (keyword, Some(value))
+      }
     headerData
   }
 
   private def readHeaderConfig(): MapView[String, HeaderReadConfig] = {
-    val path                      = getClass.getResource("/fitsHeaders.conf").getPath
+    val path                      = getClass.getResource("/fitsHeaders_plain.conf").getPath
     val configFileContent: Config = ConfigFactory.parseFile(new File(path))
 
     val configStr = configFileContent.getConfig("fits-keyword-config").root().render(ConfigRenderOptions.concise())
@@ -130,155 +144,53 @@ object SnapshotProcessorUtil {
     }
   }
 
-  def mockHeaderList(): List[HeaderConfig] = {
-    List(
-      "GRPLCn",
-      "DATE-END",
-      "ORIGIN",
-      "HISTORY",
-      "EXTVER",
-      "EXTLEVEL",
-      "DATE_OBS",
-      "FRATIO",
-      "PROGRAM",
-      "GCOUNT",
-      "OBS_ID",
-      "DATAMIN",
-      "RA",
-      "FILTERn",
-      "GRPIDn",
-      "TDIMn",
-      "DETNAM",
-      "EPOCH",
-      "PSCALn",
-      "LATITUDE",
-      "RATEL",
-      "ELAPTIME",
-      "GRPNAME",
-      "ONTIME",
-      "EXPTIME",
-      "DATE-OBS",
-      "CDELTn",
-      "CROTAn",
-      "LST",
-      "DEC_NOM",
-      "TUNITn",
-      "NAXIS",
-      "RA_PNT",
-      "TFORMn",
-      "TFIELDS",
-      "SATURATE",
-      "RA_SCZ",
-      "MOONANGL",
-      "ELTEL",
-      "EXTNAME",
-      "GRATINGn",
-      "GRATING",
-      "RA_OBJ",
-      "DECTEL",
-      "COMMENT",
-      "CRPIXn",
-      "TZEROn",
-      "PA_PNT",
-      "RA_NOM",
-      "DEC_SCX",
-      "EQUINOX",
-      "INSTRUME",
-      "TTYPEn",
-      "EXTEND",
-      "BLANK",
-      "TNULLn",
-      "TIME-END",
-      "REFERENC",
-      "XTENSION",
-      "CONFIGUR",
-      "RA_SCY",
-      "BSCALE",
-      "DEC_SXY",
-      "TELESCOP",
-      "DATE",
-      "DEC_OBJ",
-      "CTYPEn",
-      "TBCOLn",
-      "SIMPLE",
-      "CREATOR",
-      "CRVALn",
-      "DATAMAX",
-      "APERTURE",
-      "PZEROn",
-      "FILTER",
-      "THEAP",
-      "NAXISn",
-      "RA_SCX",
-      "EXPOSURE",
-      "LIVETIME",
-      "END",
-      "DEC",
-      "DEC_SCZ",
-      "OBSERVER",
-      "OBJNAME",
-      "AUTHOR",
-      "TSCALn",
-      "BZERO",
-      "PTYPEn",
-      "BLOCKED",
-      "QTEL",
-      "TELAPSE",
-      "UT",
-      "DATAMODE",
-      "BUNIT",
-      "AZTEL",
-      "OBJECT",
-      "ORIENTAT",
-      "TDISPn",
-      "OBS_MODE",
-      "SUNANGLE",
-      "PCOUNT",
-      "BITPIX",
-      "DEC_PNT",
-      "GROUPS",
-      "AIRMASS",
-      "HA",
-      "TIME-OBS"
-    ).map(p => HeaderConfig(p, p, p, p, p))
-  }
-
-  def readHeaderConfigFlat(): List[HeaderConfig] = {
-    val path                      = getClass.getResource("/fitsHeaders_flat.conf").getPath
+  def readHeaderConfigFlat(): List[ComplexConfig] = {
+    val path                      = getClass.getResource("/fits-headers-flat.conf").getPath
     val configFileContent: Config = ConfigFactory.parseFile(new File(path))
 
     val keywordConfigs = configFileContent.getConfigList("fits-keyword-config").asScala
 
     keywordConfigs.map { keywordConfig: Config =>
       val keyword      = keywordConfig.getString("keyword")
-      val obsEventName = keywordConfig.getString("obs_event_name")
-      val eventKey     = keywordConfig.getString("event_key")
-      val paramKey     = keywordConfig.getString("param_key")
-      val jsonPath     = keywordConfig.getString("json_path")
-      HeaderConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
+      val obsEventName = keywordConfig.getString("obs-event-name")
+      val eventKey     = keywordConfig.getString("event-key")
+      val paramKey     = keywordConfig.getString("param-key")
+      val jsonPath     = keywordConfig.getString("json-path")
+      ComplexConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
     }.toList
   }
 
-//  def readHeaderConfigNested(): List[HeaderConfig] = {
-//    val path                      = getClass.getResource("/fitsHeaders_nested.conf").getPath
-//    val configFileContent: Config = ConfigFactory.parseFile(new File(path))
-//
-//    val keywordConfigs = configFileContent.getConfig("fits-keyword-config")
-//
-//    keywordConfigs
-//      .entrySet()
-//      .asScala
-//      .map { keywordConfig =>
-//        val keyword = new String(keywordConfig.getKey.getBytes(), StandardCharsets.UTF_8).split("\\.")(0)
-//        val str     = keywordConfig.getValue.render()
-////        val obsEventName = keywordConfig.getString.("obs_event_name")
-////        val eventKey     = keywordConfig.getString("event_key")
-////        val paramKey     = keywordConfig.getString("param_key")
-////        val jsonPath     = keywordConfig.getString("json_path")
-////        HeaderConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
-//        HeaderConfig(keyword, str, str, str, str)
-//      }
-//      .toList
-//  }
+  def readHeaderConfigNested(): List[HeaderConfig] = {
+    val baseConfigPath           = getClass.getResource("/base-header-mappings.conf").getPath
+    val instrumentConfigPath     = getClass.getResource(s"/IRIS-header-mappings.conf").getPath
+    val baseConfig: Config       = ConfigFactory.parseFile(new File(baseConfigPath))
+    val instrumentConfig: Config = ConfigFactory.parseFile(new File(instrumentConfigPath)).withFallback(baseConfig).resolve()
+    val keywords                 = instrumentConfig.root().keySet().asScala.toList
+    keywords.map { keyword =>
+      val keywordConfig: Config = instrumentConfig.getConfig(keyword)
+      if (keywordConfig.hasPath("value")) {
+        SimpleConfig(keyword, keywordConfig.getString("value"))
+      }
+      else {
+        val obsEventName = keywordConfig.getString("obs-event-name")
+        val eventKey     = keywordConfig.getString("event-key")
+        val paramKey     = keywordConfig.getString("param-key")
+        val jsonPath     = keywordConfig.getString("json-path")
+        ComplexConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
+      }
+    }
+  }
 
+  def readHeaderList(): Map[Subsystem, List[String]] = {
+    val path           = getClass.getResource("/header-list.conf").getPath
+    val config: Config = ConfigFactory.parseFile(new File(path))
+    val subsystemNames = config.root().keySet().asScala.toList
+    subsystemNames.map { subsystemName =>
+      val maybeSubsystem: Option[Subsystem] = Subsystem.values.toList.find(_.name == subsystemName)
+      maybeSubsystem match {
+        case Some(_) => maybeSubsystem.get -> config.getStringList(subsystemName).asScala.toList
+        case None    => throw new RuntimeException(s"Invalid Subsystem Name : $subsystemName")
+      }
+    }.toMap
+  }
 }

@@ -1,6 +1,7 @@
 package metadata.db
 
 import java.sql.Timestamp
+import java.util.concurrent.ConcurrentHashMap
 
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.core.generics.Parameter
@@ -17,28 +18,13 @@ case class EventRecord(
 )
 
 object EventService {
-  private def createRecord(expId: String, obsEventName: String, event: Event): EventRecord = {
-    EventRecord(
-      expId = expId,
-      obsEventName = obsEventName,
-      source = event.source.toString(),
-      eventName = event.eventName.name,
-      eventId = event.eventId.id,
-      eventTime = Timestamp.from(event.eventTime.value),
-      paramSet = event.paramSet
-    )
-  }
-
-  def createSnapshot(expId: String, obsEventName: String, event: SystemEvent) = {
+  def createSnapshot(event: SystemEvent): ConcurrentHashMap[EventKey, Event] = {
+    val javaMap = new ConcurrentHashMap[EventKey, Event]()
     (1 to 2300).map { i =>
-      val systemEvent = addPayload(SystemEvent(event.source, EventName(s"event_key_$i"), event.paramSet), i)
-      val eventRecord = EventService.createRecord(
-        expId,
-        obsEventName,
-        systemEvent
-      )
-      EventKey(event.source, EventName(eventRecord.eventName)) -> eventRecord
-    }.toMap
+      val systemEvent: Event = addPayload(SystemEvent(event.source, EventName(s"event_key_$i"), event.paramSet), i)
+      javaMap.put(EventKey(systemEvent.source, systemEvent.eventName), systemEvent)
+    }
+    javaMap
   }
 
   def addPayload(event: SystemEvent, i: Int): SystemEvent = {
@@ -46,6 +32,7 @@ object EventService {
     event
       .madd(payload2)
       .madd(StringKey.make(s"param_key_$i").set(s"param-value-$i"))
+      .madd(StringKey.make(s"param_key_$i$i").set(s"param-value-$i$i"))
 
   }
 }

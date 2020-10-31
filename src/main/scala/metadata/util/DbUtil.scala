@@ -12,6 +12,7 @@ import io.bullet.borer.Json
 import metadata.db.EventRecord
 import org.jooq.DSLContext
 
+import scala.concurrent.Future.unit
 import scala.concurrent.{Future, blocking}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters.CompletionStageOps
@@ -29,53 +30,59 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
       .map(_ => Done)
   }
 
-  def batchInsertSingle(table: String, snapshot: Seq[EventRecord]): Array[Int] = {
+  def batchInsertSingle(expId: String, obsEventName: String, table: String, snapshot: Seq[Event]): Array[Int] = {
     var batch = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
-    snapshot.foreach { eventRecord =>
+    snapshot.foreach { event =>
       batch = batch.bind(
-        eventRecord.expId,
-        eventRecord.obsEventName,
-        eventRecord.source,
-        eventRecord.eventName,
-        eventRecord.eventId,
-        eventRecord.eventTime,
-        eventRecord.paramSet
+        expId,
+        obsEventName,
+        event.source,
+        event.eventName,
+        event.eventId,
+        event.eventTime,
+        event.paramSet
       )
     }
     batch.execute()
   }
 
-  def batchInsertParallelSnapshots(table: String, snapshot: Seq[EventRecord]): Future[Done] = {
-    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchInsertSnapshots(table, _)).run()
+  def batchInsertParallelSnapshots(expId: String, obsEventName: String, snapshot: Seq[Event], table: String): Future[Done] = {
+    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchInsertSnapshots(expId, obsEventName, _, table)).run()
   }
 
-  private def batchInsertSnapshots(table: String, batch: Seq[EventRecord]) = {
+  private def batchInsertSnapshots(expId: String, obsEventName: String, batch: Seq[Event], table: String): Future[Array[Int]] = {
     val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
-    batch.foreach { eventRecord =>
+    batch.foreach { event =>
       query.bind(
-        eventRecord.expId,
-        eventRecord.obsEventName,
-        eventRecord.source,
-        eventRecord.eventName,
-        eventRecord.eventId,
-        eventRecord.eventTime,
-        Json.encode(eventRecord.paramSet).toByteArray
+        expId,
+        obsEventName,
+        event.source.toString(),
+        event.eventName.name,
+        event.eventId.id,
+        Timestamp.from(event.eventTime.value),
+        Json.encode(event.paramSet).toByteArray
       )
     }
     blocking { query.executeAsync().asScala }
   }
 
-  def batchInsertHeaderData(table: String, expId: String, obsEventName: String, headersValueMap: List[(String, String)]) = {
+  def batchInsertHeaderData(
+      table: String,
+      expId: String,
+      obsEventName: String,
+      headersValueMap: List[(String, Option[String])]
+  ): Future[AnyRef] = {
     val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?)")
     headersValueMap.foreach { headerEntry =>
       query.bind(
         expId,
         obsEventName,
         headerEntry._1,
-        headerEntry._2
+        headerEntry._2.getOrElse("not found")
       )
     }
-    query.executeAsync().asScala
+    if (headersValueMap.nonEmpty) query.executeAsync().asScala
+    else Future.successful(unit)
   }
 
   def write(eventRecord: EventRecord): Future[Int] = {
