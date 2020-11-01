@@ -33,7 +33,7 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
         event.eventName.name,
         event.eventId.id,
         Timestamp.from(event.eventTime.value),
-        Json.encode(event.paramSet).toByteArray
+        Json.encode(event.paramSet).toUtf8String
       )
     }
     blocking { query.executeAsync().asScala }

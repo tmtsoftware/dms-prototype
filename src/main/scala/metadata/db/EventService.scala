@@ -1,21 +1,10 @@
 package metadata.db
 
-import java.sql.Timestamp
 import java.util.concurrent.ConcurrentHashMap
 
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.core.generics.Parameter
 import csw.params.events.{Event, EventKey, EventName, SystemEvent}
-
-case class EventRecord(
-    expId: String,
-    obsEventName: String,
-    source: String,
-    eventName: String,
-    eventId: String,
-    eventTime: Timestamp,
-    paramSet: Set[Parameter[_]]
-)
 
 object EventService {
   def createSnapshot(event: SystemEvent): ConcurrentHashMap[EventKey, Event] = {
