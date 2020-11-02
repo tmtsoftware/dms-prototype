@@ -1,23 +1,15 @@
 package metadata.snapshot.processor
 
 import java.io.{ByteArrayOutputStream, File, PrintStream}
-import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.{Config, ConfigFactory}
-import csw.params.events._
 import csw.prefix.models.Subsystem
 import csw.prefix.models.Subsystem.{IRIS, WFOS}
 import metadata.snapshot.processor.HeaderConfig.{ComplexConfig, SimpleConfig}
 import nom.tam.fits.Header
 
-import scala.jdk.CollectionConverters.{CollectionHasAsScala, ConcurrentMapHasAsScala}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-sealed trait HeaderConfig extends Product
-object HeaderConfig {
-  final case class ComplexConfig(keyword: String, obsEventName: String, eventKey: String, paramKey: String, jsonPath: String)
-      extends HeaderConfig
-  final case class SimpleConfig(keyword: String, value: String) extends HeaderConfig
-}
 object SnapshotProcessorUtil {
 
   def generateFormattedHeader(keywords: Seq[String], headerData: Map[String, Option[String]]) = {
@@ -35,30 +27,6 @@ object SnapshotProcessorUtil {
     output
   }
 
-  def getHeaderData(
-      snapshotObsEventName: String,
-      snapshot: ConcurrentHashMap[EventKey, Event],
-      headerConfigs: List[HeaderConfig]
-  ): List[(String, Option[String])] = {
-    val headerData: List[(String, Option[String])] = headerConfigs
-      .filter {
-        case ComplexConfig(_, configObsEventName, _, _, _) if snapshotObsEventName == configObsEventName => true
-        case SimpleConfig(_, _) if snapshotObsEventName == "exposureStart"                               => true
-        case _                                                                                           => false
-      }
-      .map {
-        case ComplexConfig(keyword, _, eventKey, paramKey, jsonPath) =>
-          val value = snapshot.asScala
-            .get(EventKey(eventKey))
-            .map(e => e.paramSet)
-            .flatMap(_.find(p => p.keyName.equals(paramKey)))
-            .map(_.head match { case s: String => s })
-          (keyword, value)
-        case SimpleConfig(keyword, value) => (keyword, Some(value))
-      }
-    headerData
-  }
-
   def loadHeaderConfig(): Map[Subsystem, List[HeaderConfig]] = {
     val subsystems: List[Subsystem] = List(IRIS, WFOS)
     subsystems.map { subsystem =>
@@ -68,15 +36,15 @@ object SnapshotProcessorUtil {
       val instrumentConfig: Config = ConfigFactory.parseFile(new File(instrumentConfigPath)).withFallback(baseConfig).resolve()
       val keywords                 = instrumentConfig.root().keySet().asScala.toList
       val headerConfigList = keywords.map { keyword =>
-        val keywordConfig: Config = instrumentConfig.getConfig(keyword)
-        if (keywordConfig.hasPath("value")) {
-          SimpleConfig(keyword, keywordConfig.getString("value"))
+        val complexConfig: Config = instrumentConfig.getConfig(keyword)
+        if (complexConfig.hasPath("value")) {
+          SimpleConfig(keyword, complexConfig.getString("value"))
         }
         else {
-          val obsEventName = keywordConfig.getString("obs-event-name")
-          val eventKey     = keywordConfig.getString("event-key")
-          val paramKey     = keywordConfig.getString("param-key")
-          val jsonPath     = keywordConfig.getString("json-path")
+          val obsEventName = complexConfig.getString("obs-event-name")
+          val eventKey     = complexConfig.getString("event-key")
+          val paramKey     = complexConfig.getString("param-key")
+          val jsonPath     = complexConfig.getString("json-path")
           ComplexConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
         }
       }

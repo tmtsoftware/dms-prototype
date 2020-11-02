@@ -6,7 +6,7 @@ import csw.params.core.generics.KeyType.StringKey
 import csw.params.core.generics.Parameter
 import csw.params.events.{Event, EventKey, EventName, SystemEvent}
 
-object EventService {
+object EventServiceUtil {
   def createSnapshot(event: SystemEvent): ConcurrentHashMap[EventKey, Event] = {
     val javaMap = new ConcurrentHashMap[EventKey, Event]()
     (1 to 2300).map { i =>

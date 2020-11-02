@@ -1,28 +1,34 @@
 package metadata.snapshot.processor
 
-case class KeywordConfig(
-    keyword: String,
-    obsEventName: String,
-    eventKey: String,
-    paramPath: List[ParamPath],
-    jsonPath: Option[String]
-)
+sealed trait HeaderConfig extends Product
 
-object KeywordConfig {
-  def apply(
+object HeaderConfig {
+  case class ComplexConfig(
       keyword: String,
       obsEventName: String,
       eventKey: String,
-      paramPath: String,
-      jsonPath: String
-  ): KeywordConfig = new KeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(jsonPath))
+      paramPath: List[ParamPath],
+      jsonPath: Option[String]
+  ) extends HeaderConfig
 
-  def apply(
-      keyword: String,
-      obsEventName: String,
-      eventKey: String,
-      paramPath: String
-  ): KeywordConfig = new KeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), None)
+  final case class SimpleConfig(keyword: String, value: String) extends HeaderConfig
+
+  object ComplexConfig {
+    def apply(
+        keyword: String,
+        obsEventName: String,
+        eventKey: String,
+        paramPath: String,
+        jsonPath: String
+    ): ComplexConfig = new ComplexConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(jsonPath))
+
+    def apply(
+        keyword: String,
+        obsEventName: String,
+        eventKey: String,
+        paramPath: String
+    ): ComplexConfig = new ComplexConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), None)
+  }
 }
 
 case class ParamPath(path: String, index: Int = 0)

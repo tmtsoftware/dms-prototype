@@ -9,8 +9,9 @@ import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey, EventName, SystemEvent}
 import csw.prefix.models.Subsystem.{ESW, IRIS}
 import csw.prefix.models.{Prefix, Subsystem}
+import metadata.snapshot.processor.HeaderConfig.{ComplexConfig, SimpleConfig}
 import metadata.snapshot.processor.SnapshotProcessorUtil.loadHeaderConfig
-import metadata.snapshot.processor.{HeaderConfig, SnapshotProcessorUtil}
+import metadata.snapshot.processor.{HeaderConfig, SnapshotProcessor, SnapshotProcessorUtil}
 import metadata.util.DbUtil
 import org.jooq.DSLContext
 
@@ -42,14 +43,15 @@ object MetadataCollectionApp extends App {
   private val counter              = 10
   private val subsystem: Subsystem = IRIS
 
+  private val snapshotProcessor = new SnapshotProcessor
+
   (1 to counter).foreach { i =>
     exposures.foreach { obsEventName =>
       val startTime = System.currentTimeMillis()
 
       val expId = s"2034A-P054-O010-${subsystem.name}-BLU1-SCI1-$i"
       //CAPTURE SNAPSHOT
-      val snapshot: ConcurrentHashMap[EventKey, Event] =
-        EventService.createSnapshot(event)
+      val snapshot: ConcurrentHashMap[EventKey, Event] = EventServiceUtil.createSnapshot(event)
 
       //PERSIST SNAPSHOT
       Await.result(
@@ -58,8 +60,11 @@ object MetadataCollectionApp extends App {
       )
 
       //PERSIST KEYWORDS
-      val headersValues: List[(String, Option[String])] =
-        SnapshotProcessorUtil.getHeaderData(obsEventName, snapshot, headerConfigs(subsystem))
+      val headersValues: List[(String, Option[String])] = headerConfigs(subsystem).map {
+        case x: ComplexConfig             => (x.keyword, snapshotProcessor.getHeader(x, snapshot))
+        case SimpleConfig(keyword, value) => (keyword, Some(value))
+      }
+
       Await.result(
         dbUtil.batchInsertHeaderData(headersDataTable, expId, obsEventName, headersValues),
         5.seconds
