@@ -9,9 +9,7 @@ import csw.database.DatabaseServiceFactory
 import csw.event.api.scaladsl.EventService
 import csw.event.client.EventServiceFactory
 import csw.event.client.models.EventStores.RedisStore
-import csw.location.api.scaladsl.LocationService
 import csw.location.client.ActorSystemFactory
-import csw.location.client.scaladsl.HttpLocationServiceFactory
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, ObserveEvent}
 import io.lettuce.core.{RedisClient, RedisURI}
@@ -89,9 +87,8 @@ object MinimalPSubscribeSampler extends App {
   private val eventualRedisURI: Future[RedisURI] =
     Future.successful(RedisURI.Builder.sentinel(host, port, "eventServer").build())
 
-  private val locationService: LocationService = HttpLocationServiceFactory.makeLocalClient
   private val dslContext: DSLContext =
-    Await.result(new DatabaseServiceFactory(system).makeDsl(locationService, "mydb"), 10.seconds)
+    Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
 
   private val util = new DbUtil(dslContext)
   Await.result(util.cleanTable(), 10.seconds)

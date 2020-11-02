@@ -3,6 +3,7 @@ package metadata.db
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import csw.database.DatabaseServiceFactory
 import csw.database.scaladsl.JooqExtentions.RichResultQuery
 import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey, EventName, SystemEvent}
@@ -21,8 +22,9 @@ object MetadataCollectionApp extends App {
 
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
   import system.executionContext
-  implicit val context: DSLContext = DbSetup.dslContext
-  private val dbUtil               = new DbUtil(context)
+  implicit val dslContext: DSLContext =
+    Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
+  private val dbUtil = new DbUtil(dslContext)
 
   private val snapshotTable    = "event_snapshots"
   private val headersDataTable = "headers_data"
@@ -91,7 +93,7 @@ object MetadataCollectionApp extends App {
     val startTime = System.currentTimeMillis()
 
     val expId                 = s"2034A-P054-O010-${subsystem.name}-BLU1-SCI1-$i"
-    val headersFromDb: String = queryHeaders(expId, context, keywords, headersDataTable)
+    val headersFromDb: String = queryHeaders(expId, dslContext, keywords, headersDataTable)
 //    println(headersFromDb)
     println(
       s"Headers: ${headersFromDb.lines().count()}, time : ${System.currentTimeMillis() - startTime} millis <<<<<<<<<<<<<<<<reading<<<<<<<<<<<<<<<<"
