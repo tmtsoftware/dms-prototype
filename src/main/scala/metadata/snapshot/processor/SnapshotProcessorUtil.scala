@@ -30,8 +30,8 @@ object SnapshotProcessorUtil {
   def loadHeaderConfig(): Map[Subsystem, List[HeaderConfig]] = {
     val subsystems: List[Subsystem] = List(IRIS, WFOS)
     subsystems.map { subsystem =>
-      val baseConfigPath           = getClass.getResource("/base-header-mappings.conf").getPath
-      val instrumentConfigPath     = getClass.getResource(s"/${subsystem.name}-header-mappings.conf").getPath
+      val baseConfigPath           = getClass.getResource("/base-keyword-mappings.conf").getPath
+      val instrumentConfigPath     = getClass.getResource(s"/${subsystem.name}-keyword-mappings.conf").getPath
       val baseConfig: Config       = ConfigFactory.parseFile(new File(baseConfigPath))
       val instrumentConfig: Config = ConfigFactory.parseFile(new File(instrumentConfigPath)).withFallback(baseConfig).resolve()
       val keywords                 = instrumentConfig.root().keySet().asScala.toList
@@ -44,7 +44,7 @@ object SnapshotProcessorUtil {
           val obsEventName = complexConfig.getString("obs-event-name")
           val eventKey     = complexConfig.getString("event-key")
           val paramKey     = complexConfig.getString("param-key")
-          val jsonPath     = complexConfig.getString("json-path")
+          val jsonPath     = complexConfig.getString("field-path")
           ComplexConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
         }
       }
@@ -53,7 +53,7 @@ object SnapshotProcessorUtil {
   }
 
   def loadHeaderList(): Map[Subsystem, List[String]] = {
-    val path           = getClass.getResource("/header-list.conf").getPath
+    val path           = getClass.getResource("/header-keywords.conf").getPath
     val config: Config = ConfigFactory.parseFile(new File(path))
     val subsystemNames = config.root().keySet().asScala.toList
     subsystemNames.map { subsystemName =>

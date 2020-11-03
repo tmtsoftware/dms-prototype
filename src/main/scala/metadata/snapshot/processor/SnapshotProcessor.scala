@@ -27,7 +27,7 @@ class SnapshotProcessor {
   }
 
   def extractValueFromParam(encodedParam: String, config: ComplexConfig): String = { // fixme: make this Options
-    val jsonPathWithIndex = "$[0]" + config.jsonPath.getOrElse("") // take 0th as list has only one item.
+    val jsonPathWithIndex = "$[0]" + config.fieldPath.getOrElse("") // take 0th as list has only one item.
     JsonPath.read[Any](s"$encodedParam", jsonPathWithIndex).toString
   }
 

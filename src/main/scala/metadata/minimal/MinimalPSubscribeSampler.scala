@@ -5,8 +5,9 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.stream.scaladsl.Source
 import csw.database.DatabaseServiceFactory
-import csw.event.api.scaladsl.EventService
+import csw.event.api.scaladsl.{EventService, EventSubscription}
 import csw.event.client.EventServiceFactory
 import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
@@ -32,14 +33,14 @@ class MinimalPSubscribeSampler(
   val currentState    = new ConcurrentHashMap[EventKey, Event]()
   val expKey          = StringKey.make("exposureId")
 
-  def snapshot(obsEvent: Event): Future[Done] = {
+  def snapshot(obsEvent: Event): Future[Array[Int]] = {
     val startTime = System.currentTimeMillis()
 
     val lastSnapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(currentState)
     val exposureId                                       = obsEvent.asInstanceOf[ObserveEvent](expKey).head
 
     val tableName = "event_snapshots"
-    val storeInDb: Future[Done] = dbUtil.batchInsertParallelSnapshots(
+    val storeInDb: Future[Array[Int]] = dbUtil.batchInsertSnapshots(
       exposureId,
       obsEvent.eventName.name,
       lastSnapshot.values().asScala.toList,

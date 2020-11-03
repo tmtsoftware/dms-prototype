@@ -26,7 +26,6 @@ object DbSetup {
       .query(s"""
                 |CREATE TABLE $table (
                 |  exposure_id VARCHAR(50) NOT NULL,
-                |  obs_event_name VARCHAR(50) NOT NULL,
                 |  keyword VARCHAR(50) NOT NULL,
                 |  value VARCHAR(50) NOT NULL
                 |);
@@ -35,6 +34,10 @@ object DbSetup {
 
   def dropTable(table: String)(implicit ctx: DSLContext): Future[Integer] =
     ctx.query(s"DROP TABLE IF EXISTS $table").executeAsyncScala()
+
+  def createIndex(table: String, index: String, columnToIndex: String)(implicit ctx: DSLContext): Future[Integer] = {
+    ctx.query(s"CREATE INDEX $index ON $table ($columnToIndex)").executeAsyncScala()
+  }
 
   def cleanTable(table: String)(implicit ctx: DSLContext): Future[Integer] =
     ctx.query(s"DELETE FROM $table").executeAsyncScala()

@@ -17,7 +17,7 @@ class RedisGlobalSubscriber(redisURI: Future[RedisURI], redisClient: RedisClient
   import metadata.util.RomaineCodecs._
 
   private lazy val romaineFactory   = new RomaineFactory(redisClient)
-  private val globalSubscriptionKey = "*.*.*"
+  private val globalSubscriptionKey = "*.*.*" //FIXME support for pattern in API
 
   def subscribeAll(): Source[Event, EventSubscription] = {
     val redisSubscriptionApi: RedisSubscriptionApi[String, Event] = romaineFactory.redisSubscriptionApi(redisURI)

@@ -33,6 +33,8 @@ object MetadataCollectionApp extends App {
   Await.result(DbSetup.dropTable(headersDataTable), 5.seconds)
   Await.result(DbSetup.createTable(snapshotTable, "text"), 5.seconds)
   Await.result(DbSetup.createHeadersDataTable(headersDataTable), 5.seconds)
+  Await.result(DbSetup.createIndex(snapshotTable, "idx_exposure_id", "exposure_id"), 5.seconds)
+  Await.result(DbSetup.createIndex(headersDataTable, "idx_hdr_exposure_id", "exposure_id"), 5.seconds)
 
   private val prefix    = Prefix(ESW, "filter")
   private val event     = SystemEvent(prefix, EventName("wheel5"))
@@ -60,13 +62,15 @@ object MetadataCollectionApp extends App {
       )
 
       //PERSIST KEYWORDS
-      val headersValues: List[(String, Option[String])] = headerConfigs(subsystem).map {
-        case x: ComplexConfig             => (x.keyword, snapshotProcessor.getHeader(x, snapshot))
-        case SimpleConfig(keyword, value) => (keyword, Some(value))
-      }
+      val headersValues: List[(String, Option[String])] = headerConfigs(subsystem)
+        .filter(_.obsEventName == obsEventName)
+        .map {
+          case x: ComplexConfig             => (x.keyword, snapshotProcessor.getHeader(x, snapshot))
+          case SimpleConfig(keyword, value) => (keyword, Some(value))
+        }
 
       Await.result(
-        dbUtil.batchInsertHeaderData(headersDataTable, expId, obsEventName, headersValues),
+        dbUtil.batchInsertHeaderData(headersDataTable, expId, headersValues),
         5.seconds
       )
 
@@ -85,10 +89,10 @@ object MetadataCollectionApp extends App {
         s"select * from $tableName where exposure_id='$expId'"
       )
 
-    val headerData    = getDatabaseQuery.fetchAsyncScala[(String, String, String, String)]
+    val headerData    = getDatabaseQuery.fetchAsyncScala[(String, String, String)]
     val headersFromDb = Await.result(headerData, 10.seconds)
     val formattedHeaders =
-      SnapshotProcessorUtil.generateFormattedHeader(keywords, headersFromDb.map(h => (h._3 -> Some(h._4))).toMap)
+      SnapshotProcessorUtil.generateFormattedHeader(keywords, headersFromDb.map(h => h._2 -> Some(h._3)).toMap)
     formattedHeaders
   }
 

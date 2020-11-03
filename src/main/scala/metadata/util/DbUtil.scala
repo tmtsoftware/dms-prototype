@@ -23,7 +23,7 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
     Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchInsertSnapshots(expId, obsEventName, _, table)).run()
   }
 
-  private def batchInsertSnapshots(expId: String, obsEventName: String, batch: Seq[Event], table: String): Future[Array[Int]] = {
+  def batchInsertSnapshots(expId: String, obsEventName: String, batch: Seq[Event], table: String): Future[Array[Int]] = {
     val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
     batch.foreach { event =>
       query.bind(
@@ -42,16 +42,14 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
   def batchInsertHeaderData(
       table: String,
       expId: String,
-      obsEventName: String,
       headersValueMap: List[(String, Option[String])]
   ): Future[AnyRef] = {
-    val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?)")
+    val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?)")
     headersValueMap.foreach { headerEntry =>
       query.bind(
         expId,
-        obsEventName,
         headerEntry._1,
-        headerEntry._2.getOrElse("not found") //FIXME edge case
+        headerEntry._2.getOrElse("not found") //FIXME edge case, dont add if there is no value
       )
     }
     if (headersValueMap.nonEmpty) query.executeAsync().asScala

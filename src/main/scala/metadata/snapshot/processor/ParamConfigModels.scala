@@ -1,6 +1,9 @@
 package metadata.snapshot.processor
 
-sealed trait HeaderConfig extends Product
+sealed trait HeaderConfig extends Product {
+  def keyword: String;
+  def obsEventName: String;
+}
 
 object HeaderConfig {
   case class ComplexConfig(
@@ -8,10 +11,12 @@ object HeaderConfig {
       obsEventName: String,
       eventKey: String,
       paramPath: List[ParamPath],
-      jsonPath: Option[String]
+      fieldPath: Option[String]
   ) extends HeaderConfig
 
-  final case class SimpleConfig(keyword: String, value: String) extends HeaderConfig
+  final case class SimpleConfig(keyword: String, value: String) extends HeaderConfig {
+    val obsEventName = "exposureStart" //FIXME read value from config or find better approach
+  }
 
   object ComplexConfig {
     def apply(
@@ -19,8 +24,8 @@ object HeaderConfig {
         obsEventName: String,
         eventKey: String,
         paramPath: String,
-        jsonPath: String
-    ): ComplexConfig = new ComplexConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(jsonPath))
+        fieldPath: String
+    ): ComplexConfig = new ComplexConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(fieldPath))
 
     def apply(
         keyword: String,
