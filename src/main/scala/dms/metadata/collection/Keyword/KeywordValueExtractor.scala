@@ -33,7 +33,7 @@ class KeywordValueExtractor {
   val defaultExtractor: PartialFunction[(Any, FitsKeyword), String] = { case _ => "" /* fixme : add error*/ }
 
   def extractValueFromParam3(value: Any, config: ComplexKeywordConfig): String = {
-    val handler = FitsKeywordExporter.export orElse defaultPrimaryExtractors orElse defaultExtractor
+    val handler = FitsValueExtractor.extract orElse defaultPrimaryExtractors orElse defaultExtractor
     handler.apply(value -> FitsKeyword(config.keyword))
   } // error
 

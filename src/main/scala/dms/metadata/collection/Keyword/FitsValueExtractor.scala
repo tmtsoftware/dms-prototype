@@ -4,8 +4,8 @@ import csw.params.core.models.Angle
 import csw.params.core.models.Coords._
 import csw.time.core.models.{TAITime, UTCTime}
 
-object FitsKeywordExporter {
-  def export: PartialFunction[Any, String] = {
+object FitsValueExtractor {
+  def extract: PartialFunction[Any, String] = {
     case (x: AltAzCoord, FitsKeyword("ALT")) => x.alt.toDegree.toString
     case (x: AltAzCoord, FitsKeyword("AZ"))  => x.az.toDegree.toString
     case (x: EqCoord, FitsKeyword("RA"))     => Angle.raToString(x.ra.toRadian)
