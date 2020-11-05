@@ -5,16 +5,15 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
-import akka.stream.scaladsl.Source
 import csw.database.DatabaseServiceFactory
-import csw.event.api.scaladsl.{EventService, EventSubscription}
+import csw.event.api.scaladsl.EventService
 import csw.event.client.EventServiceFactory
 import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, ObserveEvent}
+import dms.metadata.collection.RedisGlobalSubscriber
 import io.lettuce.core.{RedisClient, RedisURI}
-import metadata.subscriber.RedisGlobalSubscriber
 import metadata.util.DbUtil
 import org.jooq.DSLContext
 
@@ -40,12 +39,8 @@ class MinimalPSubscribeSampler(
     val exposureId                                       = obsEvent.asInstanceOf[ObserveEvent](expKey).head
 
     val tableName = "event_snapshots"
-    val storeInDb: Future[Array[Int]] = dbUtil.batchInsertSnapshots(
-      exposureId,
-      obsEvent.eventName.name,
-      lastSnapshot.values().asScala.toList,
-      tableName
-    )
+    val storeInDb: Future[Array[Int]] =
+      dbUtil.batchInsertSnapshots(exposureId, obsEvent.eventName.name, lastSnapshot, tableName)
     storeInDb.onComplete { _ =>
       val endTime      = System.currentTimeMillis()
       val snapshotTime = endTime - startTime

@@ -1,38 +1,39 @@
-package metadata.snapshot.processor
+package dms.metadata.collection.Keyword
 
-sealed trait HeaderConfig extends Product {
+sealed trait KeywordConfig extends Product {
   def keyword: String;
   def obsEventName: String;
 }
 
-object HeaderConfig {
-  case class ComplexConfig(
+object KeywordConfig {
+  case class ComplexKeywordConfig(
       keyword: String,
       obsEventName: String,
       eventKey: String,
       paramPath: List[ParamPath],
       fieldPath: Option[String]
-  ) extends HeaderConfig
+  ) extends KeywordConfig
 
-  final case class SimpleConfig(keyword: String, value: String) extends HeaderConfig {
+  final case class ConstantKeywordConfig(keyword: String, value: String) extends KeywordConfig {
     val obsEventName = "exposureStart" //FIXME read value from config or find better approach
   }
 
-  object ComplexConfig {
+  object ComplexKeywordConfig {
     def apply(
         keyword: String,
         obsEventName: String,
         eventKey: String,
         paramPath: String,
         fieldPath: String
-    ): ComplexConfig = new ComplexConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(fieldPath))
+    ): ComplexKeywordConfig =
+      new ComplexKeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(fieldPath))
 
     def apply(
         keyword: String,
         obsEventName: String,
         eventKey: String,
         paramPath: String
-    ): ComplexConfig = new ComplexConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), None)
+    ): ComplexKeywordConfig = new ComplexKeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), None)
   }
 }
 

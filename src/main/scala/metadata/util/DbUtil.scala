@@ -1,17 +1,17 @@
 package metadata.util
 
 import java.sql.Timestamp
+import java.util.concurrent.ConcurrentHashMap
 
-import akka.Done
 import akka.actor.typed.ActorSystem
-import akka.stream.scaladsl.Source
 import csw.database.scaladsl.JooqExtentions.RichQuery
-import csw.params.events.Event
+import csw.params.events.{Event, EventKey}
 import io.bullet.borer.Json
 import org.jooq.DSLContext
 
 import scala.concurrent.Future.unit
 import scala.concurrent.{Future, blocking}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters.CompletionStageOps
 
 class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
@@ -19,13 +19,14 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
 
   def cleanTable(): Future[Integer] = dslContext.query("delete from event_snapshots").executeAsyncScala()
 
-  def batchInsertParallelSnapshots(expId: String, obsEventName: String, snapshot: Seq[Event], table: String): Future[Done] = {
-    Source(snapshot).grouped(500).mapAsyncUnordered(5)(batchInsertSnapshots(expId, obsEventName, _, table)).run()
-  }
-
-  def batchInsertSnapshots(expId: String, obsEventName: String, batch: Seq[Event], table: String): Future[Array[Int]] = {
+  def batchInsertSnapshots(
+      expId: String,
+      obsEventName: String,
+      snapshot: ConcurrentHashMap[EventKey, Event],
+      table: String
+  ): Future[Array[Int]] = {
     val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?,?,?,?,?)")
-    batch.foreach { event =>
+    snapshot.values().asScala.foreach { event =>
       query.bind(
         expId,
         obsEventName,
@@ -39,17 +40,13 @@ class DbUtil(dslContext: DSLContext)(implicit system: ActorSystem[_]) {
     blocking { query.executeAsync().asScala }
   }
 
-  def batchInsertHeaderData(
-      table: String,
-      expId: String,
-      headersValueMap: List[(String, Option[String])]
-  ): Future[AnyRef] = {
+  def batchInsertHeaderData(table: String, expId: String, headersValueMap: Map[String, String]): Future[AnyRef] = {
     val query = dslContext.batch(s"INSERT INTO $table VALUES (?,?,?)")
     headersValueMap.foreach { headerEntry =>
       query.bind(
         expId,
         headerEntry._1,
-        headerEntry._2.getOrElse("not found") //FIXME edge case, dont add if there is no value
+        headerEntry._2
       )
     }
     if (headersValueMap.nonEmpty) query.executeAsync().asScala

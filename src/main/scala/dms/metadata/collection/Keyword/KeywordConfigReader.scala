@@ -1,35 +1,38 @@
-package metadata.snapshot.processor
+package dms.metadata.collection.Keyword
 
-import java.io.{ByteArrayOutputStream, File, PrintStream}
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.{Config, ConfigFactory}
+import csw.params.events.{Event, EventKey}
 import csw.prefix.models.Subsystem
 import csw.prefix.models.Subsystem.{IRIS, WFOS}
-import dms.metadata.collection.Keyword.KeywordConfig
 import dms.metadata.collection.Keyword.KeywordConfig.{ComplexKeywordConfig, ConstantKeywordConfig}
-import nom.tam.fits.Header
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-object SnapshotProcessorUtil {
+class KeywordConfigReader {
 
-  def generateFormattedHeader(keywords: Seq[String], headerData: Map[String, Option[String]]) = {
-    val fitsHeader = new Header()
-    keywords.foreach { keyword =>
-      headerData.get(keyword).flatten.map { fitsHeader.addValue(keyword, _, "") }
-    }
+  val subsystems: List[Subsystem]                             = List(IRIS, WFOS) // FIXME Should this be passed as config/ or consider all subsystem
+  lazy val keywordValueExtractor: KeywordValueExtractor       = new KeywordValueExtractor
+  lazy val headerConfigs: Map[Subsystem, List[KeywordConfig]] = load(subsystems)
 
-    val os = new ByteArrayOutputStream();
-    val ps = new PrintStream(os);
-
-    fitsHeader.dumpHeader(ps)
-
-    val output = os.toString("UTF8")
-    output
+  def extractKeywordValuesFor(
+      configSubsystem: Subsystem,
+      obsEventToProcess: Event,
+      snapshot: ConcurrentHashMap[EventKey, Event]
+  ): Map[String, String] = {
+    val headersValues: Map[String, String] = headerConfigs(configSubsystem)
+      .filter(_.obsEventName == obsEventToProcess.eventName.name)
+      .map {
+        case x: ComplexKeywordConfig               => (x.keyword, keywordValueExtractor.extract(x, snapshot))
+        case ConstantKeywordConfig(keyword, value) => (keyword, value)
+      }
+      .toMap
+    headersValues
   }
 
-  def loadHeaderConfig(): Map[Subsystem, List[KeywordConfig]] = {
-    val subsystems: List[Subsystem] = List(IRIS, WFOS)
+  private def load(subsystems: List[Subsystem]): Map[Subsystem, List[KeywordConfig]] = {
     subsystems.map { subsystem =>
       val baseConfigPath           = getClass.getResource("/base-keyword-mappings.conf").getPath
       val instrumentConfigPath     = getClass.getResource(s"/${subsystem.name}-keyword-mappings.conf").getPath
@@ -53,16 +56,4 @@ object SnapshotProcessorUtil {
     }.toMap
   }
 
-  def loadHeaderList(): Map[Subsystem, List[String]] = {
-    val path           = getClass.getResource("/header-keywords.conf").getPath
-    val config: Config = ConfigFactory.parseFile(new File(path))
-    val subsystemNames = config.root().keySet().asScala.toList
-    subsystemNames.map { subsystemName =>
-      val maybeSubsystem: Option[Subsystem] = Subsystem.values.toList.find(_.name == subsystemName)
-      maybeSubsystem match {
-        case Some(_) => maybeSubsystem.get -> config.getStringList(subsystemName).asScala.toList
-        case None    => throw new RuntimeException(s"Invalid Subsystem Name : $subsystemName")
-      }
-    }.toMap
-  }
 }

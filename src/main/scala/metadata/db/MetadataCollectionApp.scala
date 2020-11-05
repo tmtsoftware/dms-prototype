@@ -9,15 +9,15 @@ import csw.location.client.ActorSystemFactory
 import csw.params.events.{Event, EventKey, EventName, SystemEvent}
 import csw.prefix.models.Subsystem.{ESW, IRIS}
 import csw.prefix.models.{Prefix, Subsystem}
-import metadata.snapshot.processor.HeaderConfig.{ComplexConfig, SimpleConfig}
+import dms.metadata.collection.Keyword.{KeywordConfig, KeywordValueExtractor}
+import dms.metadata.collection.Keyword.KeywordConfig.{ComplexKeywordConfig, ConstantKeywordConfig}
 import metadata.snapshot.processor.SnapshotProcessorUtil.loadHeaderConfig
-import metadata.snapshot.processor.{HeaderConfig, SnapshotProcessor, SnapshotProcessorUtil}
+import metadata.snapshot.processor.SnapshotProcessorUtil
 import metadata.util.DbUtil
 import org.jooq.DSLContext
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext}
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object MetadataCollectionApp extends App {
 
@@ -28,7 +28,7 @@ object MetadataCollectionApp extends App {
   private val dbUtil = new DbUtil(dslContext)
 
   private val snapshotTable    = "event_snapshots"
-  private val headersDataTable = "headers_data"
+  private val headersDataTable = "keyword_values"
   Await.result(DbSetup.dropTable(snapshotTable), 5.seconds)
   Await.result(DbSetup.dropTable(headersDataTable), 5.seconds)
   Await.result(DbSetup.createTable(snapshotTable, "text"), 5.seconds)
@@ -40,12 +40,12 @@ object MetadataCollectionApp extends App {
   private val event     = SystemEvent(prefix, EventName("wheel5"))
   private val exposures = List("exposureStart", "exposureMiddle", "exposureEnd")
 
-  val headerConfigs: Map[Subsystem, List[HeaderConfig]] = loadHeaderConfig()
+  val headerConfigs: Map[Subsystem, List[KeywordConfig]] = loadHeaderConfig()
 
   private val counter              = 10
   private val subsystem: Subsystem = IRIS
 
-  private val snapshotProcessor = new SnapshotProcessor
+  private val snapshotProcessor = new KeywordValueExtractor
 
   (1 to counter).foreach { i =>
     exposures.foreach { obsEventName =>
@@ -57,17 +57,18 @@ object MetadataCollectionApp extends App {
 
       //PERSIST SNAPSHOT
       Await.result(
-        dbUtil.batchInsertParallelSnapshots(expId, obsEventName, snapshot.values().asScala.toList, snapshotTable),
+        dbUtil.batchInsertSnapshots(expId, obsEventName, snapshot, snapshotTable),
         5.seconds
       )
 
       //PERSIST KEYWORDS
-      val headersValues: List[(String, Option[String])] = headerConfigs(subsystem)
+      val headersValues: Map[String, String] = headerConfigs(subsystem)
         .filter(_.obsEventName == obsEventName)
         .map {
-          case x: ComplexConfig             => (x.keyword, snapshotProcessor.getHeader(x, snapshot))
-          case SimpleConfig(keyword, value) => (keyword, Some(value))
+          case x: ComplexKeywordConfig               => (x.keyword, snapshotProcessor.extract(x, snapshot))
+          case ConstantKeywordConfig(keyword, value) => (keyword, value)
         }
+        .toMap
 
       Await.result(
         dbUtil.batchInsertHeaderData(headersDataTable, expId, headersValues),

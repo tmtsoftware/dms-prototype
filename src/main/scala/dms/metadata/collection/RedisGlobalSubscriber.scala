@@ -1,4 +1,4 @@
-package metadata.subscriber
+package dms.metadata.collection
 
 import akka.Done
 import akka.actor.typed.ActorSystem
