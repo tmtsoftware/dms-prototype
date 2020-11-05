@@ -68,7 +68,7 @@ class MetadataCollectionService(
 
   private def startCapturingSnapshots(obsEventNames: Set[EventName]): Future[Done] = {
     metadataSubscriber
-      .subscribeObserveEvents(obsEventNames)
+      .subscribeObsEvents(obsEventNames)
       .mapAsync(10)(captureSnapshot)
       .run()
   }

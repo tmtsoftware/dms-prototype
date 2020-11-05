@@ -21,3 +21,52 @@ object FitsValueExtractor {
 //    case (x: ArrayData[Int], "")                => x.data
   }
 }
+
+object A {
+
+  def attributeMapForAny(x: Any) = {
+    x match {
+      case a: AltAzCoord => attributeMap(a)
+      case a: EqCoord    => attributeMap(a)
+      case a: Double     => a.toString
+    }
+  }
+
+//  _-------------------------------------------
+
+  def attributeMap(x: AltAzCoord): Map[String, String] = {
+    Map(
+      "altitude"  -> x.alt.toRadian.toString,
+      "altitudeD" -> x.alt.toDegree.toString,
+      "azimuth"   -> x.az.toRadian.toString,
+      "azimuthD"  -> x.az.toDegree.toString
+    )
+  }
+
+  def attributeMap(x: EqCoord): Map[String, String] = {
+    Map(
+      "ra"  -> x.ra.toRadian.toString,
+      "dec" -> x.dec.toRadian.toString
+    )
+  }
+//  same formatting for all the primitives
+  def attributeMap(x: Double): Map[String, String] = {
+    Map(
+      "default" -> x.toString,
+      "custom1" -> x.toString
+    )
+  }
+//  _________________________________________-
+
+  trait FitsFormat[T] {
+    def format(value: T): Map[String, String]
+  }
+
+  val altAzCoordFormat: FitsFormat[AltAzCoord] = (x: AltAzCoord) =>
+    Map(
+      "azimuth"  -> x.az.toRadian.toString,
+      "altitude" -> x.alt.toRadian.toString,
+      "azimuthD" -> x.az.toDegree.toString
+    )
+
+}

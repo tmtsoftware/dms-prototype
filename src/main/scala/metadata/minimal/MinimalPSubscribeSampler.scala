@@ -12,7 +12,7 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, ObserveEvent}
-import dms.metadata.collection.RedisGlobalSubscriber
+import dms.metadata.collection.MetadataSubscriber
 import io.lettuce.core.{RedisClient, RedisURI}
 import metadata.util.DbUtil
 import org.jooq.DSLContext
@@ -22,7 +22,7 @@ import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class MinimalPSubscribeSampler(
-    globalSubscriber: RedisGlobalSubscriber,
+    globalSubscriber: MetadataSubscriber,
     eventService: EventService,
     dbUtil: DbUtil
 )(implicit actorSystem: ActorSystem[_]) {
@@ -67,7 +67,7 @@ class MinimalPSubscribeSampler(
     val subscribeFuture = subscribeObserveEvents() // fire in background
 
     globalSubscriber
-      .subscribeAll()
+      .subscribe()
       .runForeach { e => currentState.put(e.eventKey, e) }
 
     subscribeFuture
@@ -89,8 +89,8 @@ object MinimalPSubscribeSampler extends App {
   private val util = new DbUtil(dslContext)
   Await.result(util.cleanTable(), 10.seconds)
 
-  private val eventService                            = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
-  private val globalSubscriber: RedisGlobalSubscriber = RedisGlobalSubscriber.make(redisClient, eventualRedisURI)
+  private val eventService                         = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
+  private val globalSubscriber: MetadataSubscriber = MetadataSubscriber.make(redisClient, eventualRedisURI)
 
   private val sampler = new MinimalPSubscribeSampler(globalSubscriber, eventService, util)
 

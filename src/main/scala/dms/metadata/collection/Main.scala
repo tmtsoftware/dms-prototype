@@ -25,12 +25,11 @@ object Main extends App {
   private val redisClient: RedisClient = RedisClient.create()
   private val eventualRedisURI: Future[RedisURI] =
     Future.successful(RedisURI.Builder.sentinel(host, eventServicePort, "eventServer").build())
-  private val dslContext: DSLContext                  = Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
-  private val eventService: EventService              = new EventServiceFactory(RedisStore(redisClient)).make(host, eventServicePort)
-  private val globalSubscriber: RedisGlobalSubscriber = RedisGlobalSubscriber.make(redisClient, eventualRedisURI)
+  private val dslContext: DSLContext                 = Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
+  private val eventService: EventService             = new EventServiceFactory(RedisStore(redisClient)).make(host, eventServicePort)
+  private val metadataSubscriber: MetadataSubscriber = MetadataSubscriber.make(redisClient, eventualRedisURI)
 
   private val databaseConnector         = new DatabaseWriter(dslContext)
-  private val metadataSubscriber        = new MetadataSubscriber(globalSubscriber, eventService)
   private val headerConfigReader        = new KeywordConfigReader
   private val metadataCollectionService = new MetadataCollectionService(metadataSubscriber, databaseConnector, headerConfigReader)
 

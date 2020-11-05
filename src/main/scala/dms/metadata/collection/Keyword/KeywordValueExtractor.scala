@@ -8,6 +8,7 @@ import csw.params.events.{Event, EventKey}
 import dms.metadata.collection.Keyword.KeywordConfig.ComplexKeywordConfig
 
 import scala.collection.mutable
+import scala.util.chaining.scalaUtilChainingOps
 case class FitsKeyword(keyword: String)
 
 class KeywordValueExtractor {
@@ -32,8 +33,9 @@ class KeywordValueExtractor {
 
   val defaultExtractor: PartialFunction[(Any, FitsKeyword), String] = { case _ => "" /* fixme : add error*/ }
 
-  def extractValueFromParam3(value: Any, config: ComplexKeywordConfig): String = {
-    val handler = FitsValueExtractor.extract orElse defaultPrimaryExtractors orElse defaultExtractor
+  def extractValueFromParam(value: Any, config: ComplexKeywordConfig): String = {
+//    val handler = FitsValueExtractor.extract orElse defaultPrimaryExtractors orElse defaultExtractor
+    val handler = defaultPrimaryExtractors
     handler.apply(value -> FitsKeyword(config.keyword))
   } // error
 
@@ -42,8 +44,8 @@ class KeywordValueExtractor {
       snapshot: ConcurrentHashMap[EventKey, Event] // todo: should we change signature?
   ): Option[String] = {
     val paramValue = Option(snapshot.get(EventKey(config.eventKey)))
-      .flatMap(e => getParam(config.paramPath, e.paramSet))
-      .map { p => extractValueFromParam3(p.items.head, config) }
+      .flatMap(e => getParam(config.paramPath, e.paramSet).tap(println))
+      .map { p => extractValueFromParam(p.items.head, config) }
 
     paramValue
   }
