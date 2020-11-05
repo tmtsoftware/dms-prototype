@@ -26,8 +26,9 @@ class KeywordConfigReader {
       .filter(_.obsEventName == obsEventToProcess.eventName.name)
       .map {
         case x: ComplexKeywordConfig               => (x.keyword, keywordValueExtractor.extract(x, snapshot))
-        case ConstantKeywordConfig(keyword, value) => (keyword, value)
+        case ConstantKeywordConfig(keyword, value) => (keyword, Some(value))
       }
+      .collect { case (keyword, Some(value)) => keyword -> value }
       .toMap
     headersValues
   }
