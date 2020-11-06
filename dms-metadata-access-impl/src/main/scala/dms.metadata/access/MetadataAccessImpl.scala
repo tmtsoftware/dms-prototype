@@ -3,6 +3,7 @@ package dms.metadata.access
 import akka.actor.typed.ActorSystem
 import csw.prefix.models.Subsystem
 import csw.prefix.models.Subsystem.IRIS
+import dms.metadata.access.core.{DatabaseReader, HeaderProcessor}
 
 import scala.concurrent.Future
 

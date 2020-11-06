@@ -1,4 +1,4 @@
-package dms.metadata.access
+package dms.metadata.access.core
 
 import akka.actor.typed.ActorSystem
 import csw.database.scaladsl.JooqExtentions.RichResultQuery

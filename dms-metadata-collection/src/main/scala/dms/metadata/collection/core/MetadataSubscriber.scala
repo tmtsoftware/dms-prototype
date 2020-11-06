@@ -23,7 +23,7 @@ class MetadataSubscriber(redisURI: Future[RedisURI], redisClient: RedisClient)(i
   def subscribeObsEvents(eventNames: Set[EventName]): Source[Event, EventSubscription] =
     subscribe(eventNames.map(n => s"*.*.${n.name}").toList: _*)
 
-  def subscribe(patterns: String*): Source[Event, EventSubscription] = {
+  private def subscribe(patterns: String*): Source[Event, EventSubscription] = {
     val redisSubscriptionApi: RedisSubscriptionApi[String, Event] = romaineFactory.redisSubscriptionApi(redisURI)
 
     redisSubscriptionApi

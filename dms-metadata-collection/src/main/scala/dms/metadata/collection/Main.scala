@@ -27,7 +27,6 @@ object Main extends App {
   private val eventualRedisURI: Future[RedisURI] =
     Future.successful(RedisURI.Builder.sentinel(host, eventServicePort, "eventServer").build())
   private val dslContext: DSLContext                 = Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
-  private val eventService: EventService             = new EventServiceFactory(RedisStore(redisClient)).make(host, eventServicePort)
   private val metadataSubscriber: MetadataSubscriber = MetadataSubscriber.make(redisClient, eventualRedisURI)
 
   private val databaseConnector         = new DatabaseWriter(dslContext)

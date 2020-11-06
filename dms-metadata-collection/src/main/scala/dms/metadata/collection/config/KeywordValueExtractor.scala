@@ -28,7 +28,8 @@ class KeywordValueExtractor {
   }
 
   val defaultPrimaryExtractors: PartialFunction[(Any, FitsKeyword), String] = {
-    case x @ (Byte | Short | Long | Int | Float | Boolean | Char, _) => x._1.toString
+    case (x: String, _) => x
+//    case x @ (Byte | Short | Long | Int | Float | Boolean | Char, _) => x._1.toString
   }
 
   val defaultExtractor: PartialFunction[(Any, FitsKeyword), String] = { case _ => "" /* fixme : add error*/ }

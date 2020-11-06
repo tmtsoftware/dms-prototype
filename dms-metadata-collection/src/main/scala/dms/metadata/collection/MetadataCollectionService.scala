@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.Done
 import akka.actor.typed.ActorSystem
+import csw.params.core.generics.Key
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, EventName, ObserveEvent}
 import csw.prefix.models.Subsystem.IRIS
@@ -23,10 +24,11 @@ class MetadataCollectionService(
   import actorSystem.executionContext
 
   val inMemoryEventServiceState = new ConcurrentHashMap[EventKey, Event]()
-  val expKey                    = StringKey.make("exposureId")
+  val expKey: Key[String]       = StringKey.make("exposureId")
 
   def start(obsEventNames: Set[EventName]): Future[Done] = {
-    val globalEventStreamFuture   = startUpdatingInMemoryMap()
+    val globalEventStreamFuture = startUpdatingInMemoryMap()
+    Thread.sleep(2000) //Wait for some time so that in-memory map get some time to get eventService current state
     val observerEventStreamFuture = startCapturingSnapshots(obsEventNames)
     (globalEventStreamFuture zip observerEventStreamFuture).map(_ => Done)
   }

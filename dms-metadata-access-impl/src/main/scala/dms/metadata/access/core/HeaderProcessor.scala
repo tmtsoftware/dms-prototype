@@ -1,4 +1,4 @@
-package dms.metadata.access
+package dms.metadata.access.core
 
 import java.io.{ByteArrayOutputStream, File, PrintStream}
 
