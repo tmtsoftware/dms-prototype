@@ -17,7 +17,7 @@ class MetadataSubscriber(redisURI: Future[RedisURI], redisClient: RedisClient)(i
   import dms.metadata.collection.util.RomaineCodecs._
 
   private lazy val romaineFactory   = new RomaineFactory(redisClient)
-  private val globalSubscriptionKey = "*.*.*" //FIXME support for pattern in API
+  private val globalSubscriptionKey = "*.*.*"
 
   def subscribeAll(): Source[Event, EventSubscription] = subscribe(globalSubscriptionKey)
   def subscribeObsEvents(eventNames: Set[EventName]): Source[Event, EventSubscription] =

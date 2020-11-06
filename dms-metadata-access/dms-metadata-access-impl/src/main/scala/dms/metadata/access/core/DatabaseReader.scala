@@ -12,9 +12,7 @@ class DatabaseReader(dslContext: DSLContext) {
     import system.executionContext
 
     val getDatabaseQuery =
-      dslContext.resultQuery(
-        s"select * from keyword_values where exposure_id='$expId'"
-      ) //FIXME convert to Param(to avoid Sql injection)
+      dslContext.resultQuery(s"select * from keyword_values where exposure_id= ?", expId)
 
     getDatabaseQuery.fetchAsyncScala[(String, String, String)].map { _.map(row => row._2 -> row._3).toMap }
     //FIXME handle failures

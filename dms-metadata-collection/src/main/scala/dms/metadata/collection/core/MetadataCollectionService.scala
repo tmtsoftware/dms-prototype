@@ -7,8 +7,8 @@ import akka.actor.typed.ActorSystem
 import csw.params.core.generics.Key
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, EventName, ObserveEvent}
-import csw.prefix.models.Subsystem.IRIS
 import dms.metadata.collection.config.KeywordConfigReader
+import dms.metadata.collection.util.SubsystemExtractor
 
 import scala.concurrent.Future
 
@@ -40,10 +40,10 @@ class MetadataCollectionService(
     try {
       val keywordValues: Map[String, String] =
         headerConfigReader.extractKeywordValuesFor(
-          IRIS,
+          SubsystemExtractor.extract(exposureId),
           obsEvent,
           snapshot
-        ) //FIXME extract subsystem from expId, IRIS hardcoded here
+        )
 
       val headerFuture = databaseConnector.writeKeywordData(exposureId, keywordValues)
       (snapshotFuture zip headerFuture).map { _ => Done }

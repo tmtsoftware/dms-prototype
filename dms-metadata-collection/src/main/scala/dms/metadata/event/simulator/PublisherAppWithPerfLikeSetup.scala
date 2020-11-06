@@ -42,7 +42,7 @@ object PublisherAppWithPerfLikeSetup extends App {
     def eventGenerator() = {
       println("publishing observer event : " + counter)
       counter += 1
-      Some(obsEvent.add(expIdKey.set(s"${exposureId}_$counter")))
+      Some(obsEvent.add(expIdKey.set(s"$exposureId-$counter")))
     }
 
     publisher.publish(eventGenerator(), every)

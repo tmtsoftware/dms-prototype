@@ -31,8 +31,7 @@ lazy val `dms-spark` = project
   )
 
 lazy val aggregatedProjects: Seq[ProjectReference] = Seq(
-  `dms-metadata-access-api`,
-  `dms-metadata-access-impl`,
+  `dms-metadata-access`,
   `dms-metadata-collection`
 )
 
@@ -53,7 +52,6 @@ lazy val `dms-metadata-access` = project
 
 lazy val `dms-metadata-access-api` = project
   .in(file("dms-metadata-access/dms-metadata-access-api"))
-  .settings(commonSettings)
 
 lazy val `dms-metadata-access-impl` = project
   .in(file("dms-metadata-access/dms-metadata-access-impl"))

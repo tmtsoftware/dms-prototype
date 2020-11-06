@@ -2,8 +2,8 @@ package dms.metadata.access
 
 import akka.actor.typed.ActorSystem
 import csw.prefix.models.Subsystem
-import csw.prefix.models.Subsystem.IRIS
 import dms.metadata.access.core.{DatabaseReader, HeaderProcessor}
+import dms.metadata.access.util.SubsystemExtractor
 
 import scala.concurrent.Future
 
@@ -11,8 +11,9 @@ class MetadataAccessImpl(databaseConnector: DatabaseReader, headerProcessor: Hea
     extends MetadataAccessService {
 
   override def getFITSHeader(expId: String): Future[String] = {
+
     val headerKeywords: Map[Subsystem, List[String]] = headerProcessor.loadHeaderList()
-    getFITSHeader(expId, headerKeywords(IRIS)) //FIXME extract instrument name from expId
+    getFITSHeader(expId, headerKeywords(SubsystemExtractor.extract(expId)))
   }
 
   override def getFITSHeader(expId: String, keywords: List[String]): Future[String] = {
