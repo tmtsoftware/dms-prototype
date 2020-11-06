@@ -9,7 +9,7 @@ import romaine.codec.RomaineCodec
 
 import scala.util.control.NonFatal
 
-// this file is copied from CSW event module
+//TODO: this file is copied from CSW event module
 object EventConverter {
   import csw.params.core.formats.ParamCodecs._
 

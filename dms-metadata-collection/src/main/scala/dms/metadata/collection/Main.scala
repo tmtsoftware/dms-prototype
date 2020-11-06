@@ -9,7 +9,7 @@ import csw.event.client.models.EventStores.RedisStore
 import csw.location.client.ActorSystemFactory
 import csw.params.events.EventName
 import dms.metadata.collection.config.KeywordConfigReader
-import dms.metadata.collection.core.{DatabaseWriter, MetadataSubscriber}
+import dms.metadata.collection.core.{DatabaseWriter, MetadataCollectionService, MetadataSubscriber}
 import io.lettuce.core.{RedisClient, RedisURI}
 import org.jooq.DSLContext
 

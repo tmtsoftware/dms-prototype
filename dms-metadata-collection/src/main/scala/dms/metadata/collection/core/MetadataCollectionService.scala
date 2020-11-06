@@ -1,4 +1,4 @@
-package dms.metadata.collection
+package dms.metadata.collection.core
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -9,7 +9,6 @@ import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, EventName, ObserveEvent}
 import csw.prefix.models.Subsystem.IRIS
 import dms.metadata.collection.config.KeywordConfigReader
-import dms.metadata.collection.core.{DatabaseWriter, MetadataSubscriber}
 
 import scala.concurrent.Future
 
@@ -17,9 +16,7 @@ class MetadataCollectionService(
     metadataSubscriber: MetadataSubscriber,
     databaseConnector: DatabaseWriter,
     headerConfigReader: KeywordConfigReader
-)(implicit
-    actorSystem: ActorSystem[_]
-) {
+)(implicit actorSystem: ActorSystem[_]) {
 
   import actorSystem.executionContext
 
