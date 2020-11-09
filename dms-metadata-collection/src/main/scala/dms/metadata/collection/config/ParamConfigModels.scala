@@ -11,7 +11,7 @@ object KeywordConfig {
       obsEventName: String,
       eventKey: String,
       paramPath: List[ParamPath],
-      fieldPath: Option[String]
+      attribute: Option[String]
   ) extends KeywordConfig
 
   final case class ConstantKeywordConfig(keyword: String, value: String) extends KeywordConfig {
@@ -24,9 +24,9 @@ object KeywordConfig {
         obsEventName: String,
         eventKey: String,
         paramPath: String,
-        fieldPath: String
+        attribute: String
     ): ComplexKeywordConfig =
-      new ComplexKeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(fieldPath))
+      new ComplexKeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(attribute))
 
     def apply(
         keyword: String,

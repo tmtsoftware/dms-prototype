@@ -3,8 +3,10 @@ package dms.metadata.collection.config
 import java.util.concurrent.ConcurrentHashMap
 
 import csw.params.core.generics.Parameter
-import csw.params.core.models.Struct
+import csw.params.core.models.Coords._
+import csw.params.core.models.{RaDec, Struct}
 import csw.params.events.{Event, EventKey}
+import csw.time.core.models.{TAITime, UTCTime}
 import dms.metadata.collection.config.KeywordConfig.ComplexKeywordConfig
 
 import scala.collection.mutable
@@ -27,19 +29,6 @@ class KeywordValueExtractor {
     }
   }
 
-  val defaultPrimaryExtractors: PartialFunction[(Any, FitsKeyword), String] = {
-    case (x: String, _) => x
-//    case x @ (Byte | Short | Long | Int | Float | Boolean | Char, _) => x._1.toString
-  }
-
-  val defaultExtractor: PartialFunction[(Any, FitsKeyword), String] = { case _ => "" /* fixme : add error*/ }
-
-  def extractValueFromParam(value: Any, config: ComplexKeywordConfig): String = {
-//    val handler = FitsValueExtractor.extract orElse defaultPrimaryExtractors orElse defaultExtractor
-    val handler = defaultPrimaryExtractors
-    handler.apply(value -> FitsKeyword(config.keyword))
-  } // error
-
   def extract(
       config: ComplexKeywordConfig,
       snapshot: ConcurrentHashMap[EventKey, Event] // todo: should we change signature?
@@ -50,4 +39,57 @@ class KeywordValueExtractor {
 
     paramValue
   }
+
+  def extract(value: Any): Map[String, () => String] = {
+    import FitsValueFormats._
+    value match {
+      case x: EqCoord    => eqCoordFormats.format(x)
+      case x: AltAzCoord => altAzCoordFormats.format(x)
+      case x: Double     => doubleFormats.format(x)
+      case x: UTCTime    => utcTimeFormats.format(x)
+
+      // ---------------------------------
+
+      case x: RaDec            => raDecFormats.format(x)
+      case x: SolarSystemCoord => solarSystemCoordFormats.format(x)
+      case x: MinorPlanetCoord => minorPlanetCoordFormats.format(x)
+      case x: CometCoord       => cometCoordFormats.format(x)
+//      case x: Coord            => "" // fixme: coord is a sealed trait. why do we have a key for that.
+
+      case x: String  => stringFormats.format(x)
+      case x: Struct  => structFormats.format(x)
+      case x: TAITime => taiTimeFormats.format(x)
+
+      case x: Boolean => booleanFormats.format(x)
+      case x: Char    => charFormats.format(x)
+      case x: Byte    => byteFormats.format(x)
+      case x: Short   => shortFormats.format(x)
+      case x: Long    => longFormats.format(x)
+      case x: Int     => intFormats.format(x)
+      case x: Float   => floatFormats.format(x)
+
+//      case x: ArrayData[Byte]   => ""
+      //      case x: ArrayData[Short]  => ""
+      //      case x: ArrayData[Long]   => ""
+      //      case x: ArrayData[Int]    => ""
+      //      case x: ArrayData[Float]  => ""
+      //      case x: ArrayData[Double] => ""
+      //
+      //      case x: MatrixData[Byte]   => ""
+      //      case x: MatrixData[Short]  => ""
+      //      case x: MatrixData[Long]   => ""
+      //      case x: MatrixData[Int]    => ""w
+      //      case x: MatrixData[Float]  => ""
+      //      case x: MatrixData[Double] => ""
+    }
+  }
+
+  def extractValueFromParam(value: Any, config: ComplexKeywordConfig): String = {
+    val str = config.attribute.getOrElse(KeywordValueExtractor.DEFAULT)
+    extract(value)(str)()
+  }
+}
+
+object KeywordValueExtractor {
+  val DEFAULT = "default"
 }

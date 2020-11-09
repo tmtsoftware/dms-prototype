@@ -49,8 +49,8 @@ class KeywordConfigReader {
           val obsEventName = complexConfig.getString("obs-event-name")
           val eventKey     = complexConfig.getString("event-key")
           val paramKey     = complexConfig.getString("param-key")
-          val jsonPath     = complexConfig.getString("field-path")
-          ComplexKeywordConfig(keyword, obsEventName, eventKey, paramKey, jsonPath)
+          val attribute    = complexConfig.getString("attribute")
+          ComplexKeywordConfig(keyword, obsEventName, eventKey, paramKey, attribute)
         }
       }
       subsystem -> headerConfigList
