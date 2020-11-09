@@ -1,6 +1,6 @@
 package dms.metadata.access.core
 
-import java.io.{ByteArrayOutputStream, File, PrintStream}
+import java.io.{ByteArrayOutputStream, PrintStream}
 
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.prefix.models.Subsystem
@@ -11,8 +11,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 class HeaderProcessor {
 
   def loadHeaderList(): Map[Subsystem, List[String]] = {
-    val path           = getClass.getResource("/header-keywords.conf").getPath
-    val config: Config = ConfigFactory.parseFile(new File(path))
+    val config: Config = ConfigFactory.parseResources("header-keywords.conf")
     val subsystemNames = config.root().keySet().asScala.toList
     subsystemNames.map { subsystemName =>
       val maybeSubsystem: Option[Subsystem] = Subsystem.values.toList.find(_.name == subsystemName)

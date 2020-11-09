@@ -1,6 +1,5 @@
 package dms.metadata.collection.config
 
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 import com.typesafe.config.{Config, ConfigFactory}
@@ -35,11 +34,9 @@ class KeywordConfigReader {
 
   private def load(subsystems: List[Subsystem]): Map[Subsystem, List[KeywordConfig]] = {
     subsystems.map { subsystem =>
-      val baseConfigPath           = getClass.getResource("/base-keyword-mappings.conf").getPath
-      val instrumentConfigPath     = getClass.getResource(s"/${subsystem.name}-keyword-mappings.conf").getPath
-      val baseConfig: Config       = ConfigFactory.parseFile(new File(baseConfigPath))
-      val instrumentConfig: Config = ConfigFactory.parseFile(new File(instrumentConfigPath)).withFallback(baseConfig).resolve()
-      val keywords                 = instrumentConfig.root().keySet().asScala.toList
+      val baseConfig       = ConfigFactory.parseResources("base-keyword-mappings.conf")
+      val instrumentConfig = ConfigFactory.parseResources(s"${subsystem.name}-keyword-mappings.conf").withFallback(baseConfig)
+      val keywords         = instrumentConfig.root().keySet().asScala.toList
       val headerConfigList = keywords.map { keyword =>
         val complexConfig: Config = instrumentConfig.getConfig(keyword)
         if (complexConfig.hasPath("value")) {

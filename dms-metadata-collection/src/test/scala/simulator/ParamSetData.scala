@@ -1,4 +1,4 @@
-package event.simulator
+package simulator
 
 import java.time.Instant
 
