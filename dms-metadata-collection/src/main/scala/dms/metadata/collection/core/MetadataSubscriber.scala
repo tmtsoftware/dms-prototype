@@ -12,7 +12,7 @@ import romaine.reactive.{RedisSubscription, RedisSubscriptionApi}
 
 import scala.concurrent.Future
 
-class MetadataSubscriber(redisURI: Future[RedisURI], redisClient: RedisClient)(implicit actorSystem: ActorSystem[_]) {
+class MetadataSubscriber(redisURI: RedisURI, redisClient: RedisClient)(implicit actorSystem: ActorSystem[_]) {
   import actorSystem.executionContext
   import dms.metadata.collection.util.RomaineCodecs._
 
@@ -24,7 +24,8 @@ class MetadataSubscriber(redisURI: Future[RedisURI], redisClient: RedisClient)(i
     subscribe(eventNames.map(n => s"*.*.${n.name}").toList: _*)
 
   private def subscribe(patterns: String*): Source[Event, EventSubscription] = {
-    val redisSubscriptionApi: RedisSubscriptionApi[String, Event] = romaineFactory.redisSubscriptionApi(redisURI)
+    val redisSubscriptionApi: RedisSubscriptionApi[String, Event] =
+      romaineFactory.redisSubscriptionApi(Future.successful(redisURI))
 
     redisSubscriptionApi
       .psubscribe(patterns.toList, OverflowStrategy.LATEST) // todo: think about overflow
@@ -32,6 +33,7 @@ class MetadataSubscriber(redisURI: Future[RedisURI], redisClient: RedisClient)(i
       .mapMaterializedValue(subscription)
   }
 
+  // FIXME: Can we use RedisSubscription and not do this?
   private def subscription(rs: RedisSubscription) =
     new EventSubscription {
       override def unsubscribe(): Future[Done] = rs.unsubscribe()
@@ -42,6 +44,6 @@ class MetadataSubscriber(redisURI: Future[RedisURI], redisClient: RedisClient)(i
 object MetadataSubscriber {
   def make(
       redisClient: RedisClient,
-      redisURI: Future[RedisURI]
+      redisURI: RedisURI
   )(implicit system: ActorSystem[_]): MetadataSubscriber = new MetadataSubscriber(redisURI, redisClient)
 }

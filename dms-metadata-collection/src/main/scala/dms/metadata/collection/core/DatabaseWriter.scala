@@ -17,20 +17,18 @@ class DatabaseWriter(dslContext: DSLContext)(implicit actorSystem: ActorSystem[_
   import actorSystem.executionContext
   import csw.params.core.formats.ParamCodecs.paramEncExistential
 
+  // FIXME domain model for data? List(Header(k, v))?
   def writeKeywordData(expId: String, data: Map[String, String]): Future[Done] = {
 
+    // FIXME this should be take care at caller side
     require(data.nonEmpty) // FIXME what to do if empty keywordData received to persist - FAIL/IGNORE ?
 
     val query = dslContext.batch(s"INSERT INTO keyword_values VALUES (?,?,?)")
-    data.map { keyword =>
-      query.bind(
-        expId,
-        keyword._1,
-        keyword._2
-      )
+    data.map {
+      case (header, value) => query.bind(expId, header, value)
     }
 
-    blocking { query.executeAsync().asScala.map(_ => Done) }
+    blocking { query.executeAsync().asScala.map(_ => Done) } // FIXME this blocking does not make sense here
   }
 
   def writeSnapshot(expId: String, obsEventName: String, snapshot: ConcurrentHashMap[EventKey, Event]): Future[Done] = {
@@ -49,7 +47,7 @@ class DatabaseWriter(dslContext: DSLContext)(implicit actorSystem: ActorSystem[_
         Json.encode(event.paramSet).toUtf8String
       )
     }
-    blocking { query.executeAsync().asScala.map(_ => Done) }
+    blocking { query.executeAsync().asScala.map(_ => Done) } // FIXME this blocking does not make sense here
   }
 
 }

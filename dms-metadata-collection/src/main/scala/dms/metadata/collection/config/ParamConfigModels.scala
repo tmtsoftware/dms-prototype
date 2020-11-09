@@ -10,34 +10,18 @@ object KeywordConfig {
       keyword: String,
       obsEventName: String,
       eventKey: String,
-      paramPath: List[ParamPath],
+      private val paramKey: String,
       attribute: Option[String]
-  ) extends KeywordConfig
+  ) extends KeywordConfig {
+    val paramPath: List[ParamPath] = ParamConfigParser.from(paramKey)
+  }
 
   final case class ConstantKeywordConfig(keyword: String, value: String) extends KeywordConfig {
     val obsEventName = "exposureStart" //FIXME read value from config or find better approach
   }
-
-  object ComplexKeywordConfig {
-    def apply(
-        keyword: String,
-        obsEventName: String,
-        eventKey: String,
-        paramPath: String,
-        attribute: String
-    ): ComplexKeywordConfig =
-      new ComplexKeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), Some(attribute))
-
-    def apply(
-        keyword: String,
-        obsEventName: String,
-        eventKey: String,
-        paramPath: String
-    ): ComplexKeywordConfig = new ComplexKeywordConfig(keyword, obsEventName, eventKey, ParamConfigParser.from(paramPath), None)
-  }
 }
 
-case class ParamPath(path: String, index: Int = 0)
+case class ParamPath(keyName: String, index: Int = 0)
 
 object ParamConfigParser {
   private val pattern = """(.*)\[(\d+)\]""".r

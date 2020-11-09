@@ -4,10 +4,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.Done
 import akka.actor.typed.ActorSystem
-import csw.params.core.generics.Key
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, EventName, ObserveEvent}
-import dms.metadata.collection.config.KeywordConfigReader
 import dms.metadata.collection.util.SubsystemExtractor
 
 import scala.concurrent.Future
@@ -15,13 +13,13 @@ import scala.concurrent.Future
 class MetadataCollectionService(
     metadataSubscriber: MetadataSubscriber,
     databaseConnector: DatabaseWriter,
-    headerConfigReader: KeywordConfigReader
+    keywordValueExtractor: KeywordValueExtractor
 )(implicit actorSystem: ActorSystem[_]) {
 
   import actorSystem.executionContext
 
-  val inMemoryEventServiceState = new ConcurrentHashMap[EventKey, Event]()
-  val expKey: Key[String]       = StringKey.make("exposureId")
+  private val inMemoryEventServiceState = new ConcurrentHashMap[EventKey, Event]()
+  private val expKey                    = StringKey.make("exposureId")
 
   def start(obsEventNames: Set[EventName]): Future[Done] = {
     val globalEventStreamFuture = startUpdatingInMemoryMap()
@@ -30,43 +28,43 @@ class MetadataCollectionService(
     (globalEventStreamFuture zip observerEventStreamFuture).map(_ => Done)
   }
 
+  // FIXME captureSnapshot is very vital, make sure it never throws exception
   def captureSnapshot(obsEvent: Event): Future[Done] = {
+    // FIXME IMP: handle exceptions - 1. ClassCast, 2. NoSuchElement etc
     val exposureId: String = obsEvent.asInstanceOf[ObserveEvent](expKey).head
 
     val snapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(inMemoryEventServiceState)
 
-    val snapshotFuture = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
+    val writeResponse = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
 
     try {
       val keywordValues: Map[String, String] =
-        headerConfigReader.extractKeywordValuesFor(
+        keywordValueExtractor.extractKeywordValuesFor(
           SubsystemExtractor.extract(exposureId),
           obsEvent,
           snapshot
         )
 
       val headerFuture = databaseConnector.writeKeywordData(exposureId, keywordValues)
-      (snapshotFuture zip headerFuture).map { _ => Done }
+      (writeResponse zip headerFuture).map { _ => Done }
     }
     catch {
+      // FIXME why this is required?
       case exception: Exception => throw exception
     }
 
   }
 
-  private def startUpdatingInMemoryMap(): Future[Done] = {
+  private def startUpdatingInMemoryMap(): Future[Done] =
     metadataSubscriber
       .subscribeAll()
-      .runForeach { event =>
-        inMemoryEventServiceState.put(event.eventKey, event)
-      } // TODO try mapAsync and run as it is concurrent hashmap
-  }
+      // TODO try mapAsync and run as it is concurrent hashmap
+      .runForeach { event => inMemoryEventServiceState.put(event.eventKey, event) }
 
-  private def startCapturingSnapshots(obsEventNames: Set[EventName]): Future[Done] = {
+  private def startCapturingSnapshots(obsEventNames: Set[EventName]): Future[Done] =
     metadataSubscriber
       .subscribeObsEvents(obsEventNames)
       .mapAsync(10)(captureSnapshot)
       .run()
-  }
 
 }
