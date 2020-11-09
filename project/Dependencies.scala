@@ -5,7 +5,8 @@ object Dependencies {
     Seq(
       Csw.`csw-database`,
       Csw.`csw-location-client`,
-      Csw.`csw-event-client`
+      Csw.`csw-event-client`,
+      Libs.pureconfig
     )
   )
 

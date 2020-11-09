@@ -22,12 +22,12 @@ object FitsValue {
         )
       case x: Double =>
         Map(
-          Default  -> x.toString,
+          Default  -> x.toString, // fixme: required? default case is handled in catch all
           "custom" -> f"$x%.3f"
         )
       case x: UTCTime =>
         Map(
-          Default -> x.toString,
+          Default -> x.toString, // fixme: required? default case is handled in catch all
           "iso"   -> DateTimeFormatter.ISO_INSTANT.format(x.value)
         )
       case x =>

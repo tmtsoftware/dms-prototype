@@ -9,5 +9,6 @@ object Csw {
 }
 
 object Libs {
-  val `nom-tam-fits` = "gov.nasa.gsfc.heasarc" % "nom-tam-fits" % "1.15.2"
+  val `nom-tam-fits` = "gov.nasa.gsfc.heasarc"  % "nom-tam-fits" % "1.15.2"
+  val pureconfig     = "com.github.pureconfig" %% "pureconfig"   % "0.14.0"
 }
