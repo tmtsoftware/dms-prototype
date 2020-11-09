@@ -15,6 +15,7 @@ import csw.location.client.ActorSystemFactory
 import csw.location.client.scaladsl.HttpLocationServiceFactory
 import csw.params.events.{Event, EventKey}
 import io.lettuce.core.{RedisClient, RedisURI}
+import metadata.db.DbSetup
 import metadata.subscriber.RedisGlobalSubscriber
 import metadata.util.{DbUtil, SamplerUtil}
 import org.jooq.DSLContext
@@ -118,12 +119,13 @@ object MetadataPSubscribeSampler extends App {
   private val eventualRedisURI: Future[RedisURI] =
     Future.successful(RedisURI.Builder.sentinel(host, port, "eventServer").build())
 
-  private val locationService: LocationService = HttpLocationServiceFactory.makeLocalClient
-  private val dslContext: DSLContext =
-    Await.result(new DatabaseServiceFactory(system).makeDsl(locationService, "mydb"), 10.seconds)
-
+  implicit private val dslContext: DSLContext =
+    Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
   private val util = new DbUtil(dslContext)
-  Await.result(util.cleanTable(), 10.seconds)
+
+  private val snapshotTable = "event_snapshots"
+  Await.result(DbSetup.dropTable(snapshotTable), 5.seconds)
+  Await.result(DbSetup.createTable(snapshotTable, "text"), 5.seconds)
 
   private val eventService                            = new EventServiceFactory(RedisStore(redisClient)).make(host, port)
   private val globalSubscriber: RedisGlobalSubscriber = RedisGlobalSubscriber.make(redisClient, eventualRedisURI)

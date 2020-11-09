@@ -51,7 +51,7 @@ class MetadataGetSampler(eventService: EventService, redisApi: RedisUtil)(implic
     val subscriberSource =
       eventSubscriber
         .subscribe(Set(EventKey("esw.observe.exposureStart")))
-        .drop(50)
+        .drop(5)
         .take(1000)
         .runForeach(snapshot)
     subscriberSource

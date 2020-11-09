@@ -24,10 +24,10 @@ object PersistHeaderKeywords extends App {
   private val dbUtil               = new DbUtil(context)
 
   private val snapshotTable    = "event_snapshots"
-  private val headersDataTable = "headers_data"
+  private val headersDataTable = "keyword_values"
   Await.result(DbSetup.dropTable(snapshotTable), 5.seconds)
   Await.result(DbSetup.dropTable(headersDataTable), 5.seconds)
-  Await.result(DbSetup.createTable(snapshotTable), 5.seconds)
+  Await.result(DbSetup.createTable(snapshotTable, "text"), 5.seconds)
   Await.result(DbSetup.createHeadersDataTable(headersDataTable), 5.seconds)
 
   private val prefix    = Prefix(ESW, "filter")

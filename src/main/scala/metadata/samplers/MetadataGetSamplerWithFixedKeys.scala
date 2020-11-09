@@ -52,7 +52,7 @@ class MetadataGetSamplerWithFixedKeys(eventService: EventService, eventKeys: Set
     val eventualDone =
       redisSubscriber
         .subscribe(Set(EventKey("esw.observe.exposureStart")))
-        .drop(50)
+        .drop(5)
         .take(10)
         .runForeach(snapshot)
     eventualDone
