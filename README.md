@@ -14,7 +14,7 @@ User should have `postgres` server installed with `postgres` database and `postg
 
 ##### Login to postgres from command line
 ``` 
-psql -h localhost -p 5432 -U postgres
+psql -d postgres -h localhost -p 5432 -U postgres
 ```
 
 ##### create snapshots table and index 
