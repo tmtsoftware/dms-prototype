@@ -55,6 +55,10 @@ class MetadataCollectionService(
 
   }
 
+  //FIXME handle/think about use cases :
+  // When there is a slow publisher and metadata collection starts up after the slow publisher publishes, psubscribe won’t get a value for that event.
+  // If metadata collection crashed and was restarted, it would not have all events if they are not changing quickly.
+  // So we may need a way to get all keys once when starting
   private def startUpdatingInMemoryMap(): Future[Done] =
     metadataSubscriber
       .subscribeAll()

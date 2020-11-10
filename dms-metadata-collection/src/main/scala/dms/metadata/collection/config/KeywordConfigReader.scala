@@ -14,8 +14,7 @@ class KeywordConfigReader {
 
   private def load(subsystems: List[Subsystem]): Map[Subsystem, List[KeywordConfig]] = {
     subsystems.map { subsystem =>
-      val baseConfig       = ConfigFactory.parseResources("base-keyword-mappings.conf")
-      val instrumentConfig = ConfigFactory.parseResources(s"${subsystem.name}-keyword-mappings.conf").withFallback(baseConfig)
+      val instrumentConfig = ConfigFactory.parseResources(s"${subsystem.name}-keyword-mappings.conf")
       val keywords         = instrumentConfig.root().keySet().asScala.toList
       val headerConfigList = keywords.map { keyword =>
         val keywordConfig = instrumentConfig.getConfig(keyword)
