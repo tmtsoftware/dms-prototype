@@ -9,21 +9,14 @@ import scala.concurrent.Future
 
 class MetadataAccessImpl(databaseConnector: DatabaseReader, headerProcessor: HeaderProcessor)(implicit system: ActorSystem[_])
     extends MetadataAccessService {
+  import system.executionContext
+  private val headerKeywords = headerProcessor.loadHeaderList()
 
-  override def getFITSHeader(expId: String): Future[String] = {
-
-    val headerKeywords: Map[Subsystem, List[String]] = headerProcessor.loadHeaderList()
+  override def getFITSHeader(expId: String): Future[String] =
     getFITSHeader(expId, headerKeywords(SubsystemExtractor.extract(expId)))
-  }
 
   override def getFITSHeader(expId: String, keywords: List[String]): Future[String] = {
-    import system.executionContext
-
-    val keywordData: Future[Map[String, String]] = databaseConnector.readKeywordData(expId)
-
-    val headerString: Future[String] = keywordData.map {
-      headerProcessor.generateFormattedHeader(keywords, _)
-    }
-    headerString
+    val keywordData = databaseConnector.readKeywordData(expId)
+    keywordData.map(headerProcessor.generateFormattedHeader(keywords, _))
   }
 }
