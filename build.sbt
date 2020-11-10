@@ -1,10 +1,7 @@
-lazy val commonSettings: Seq[Setting[_]] = Seq(
-  scalaVersion := "2.13.3",
-  resolvers += "jitpack" at "https://jitpack.io"
-)
+import Common._
 
 inThisBuild(
-  commonSettings
+  CommonSettings
 )
 
 lazy val `dms-spark` = project
@@ -38,16 +35,15 @@ lazy val aggregatedProjects: Seq[ProjectReference] = Seq(
 lazy val root = project
   .in(file("."))
   .aggregate(aggregatedProjects: _*)
-  .settings(
-    name := "dms-prototype"
-  )
 
 lazy val `dms-metadata-collection` = project
+  .in(file("dms-metadata-collection"))
   .settings(
     libraryDependencies ++= Dependencies.MetadataCollection.value
   )
 
 lazy val `dms-metadata-access` = project
+  .in(file("dms-metadata-access"))
   .aggregate(`dms-metadata-access-api`, `dms-metadata-access-impl`)
 
 lazy val `dms-metadata-access-api` = project

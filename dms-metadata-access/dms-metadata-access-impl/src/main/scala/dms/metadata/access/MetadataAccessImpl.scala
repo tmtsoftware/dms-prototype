@@ -1,7 +1,6 @@
 package dms.metadata.access
 
 import akka.actor.typed.ActorSystem
-import csw.prefix.models.Subsystem
 import dms.metadata.access.core.{DatabaseReader, HeaderProcessor}
 import dms.metadata.access.util.SubsystemExtractor
 

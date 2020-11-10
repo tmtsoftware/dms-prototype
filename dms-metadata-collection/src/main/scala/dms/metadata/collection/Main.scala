@@ -20,7 +20,7 @@ object Main extends App {
   private val eventServicePort                       = 26379
   private val host                                   = "localhost"
   private val redisClient: RedisClient               = RedisClient.create()
-  private val redisURI: RedisURI             = RedisURI.Builder.sentinel(host, eventServicePort, "eventServer").build()
+  private val redisURI: RedisURI                     = RedisURI.Builder.sentinel(host, eventServicePort, "eventServer").build()
   private val dslContext: DSLContext                 = Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
   private val metadataSubscriber: MetadataSubscriber = MetadataSubscriber.make(redisClient, redisURI)
 

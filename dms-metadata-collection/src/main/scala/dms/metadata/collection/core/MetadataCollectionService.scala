@@ -47,8 +47,7 @@ class MetadataCollectionService(
 
       val headerFuture = databaseConnector.writeKeywordData(exposureId, keywordValues)
       (writeResponse zip headerFuture).map { _ => Done }
-    }
-    catch {
+    } catch {
       // FIXME why this is required?
       case exception: Exception => throw exception
     }
