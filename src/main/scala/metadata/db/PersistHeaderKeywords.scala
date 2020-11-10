@@ -45,15 +45,15 @@ object PersistHeaderKeywords extends App {
         EventService.createSnapshot(event)
 
       //PERSIST SNAPSHOT
-      Await.result(
-        dbUtil.batchInsertParallelSnapshots(expId, obsEventName, snapshot.values().asScala.toList, snapshotTable),
-        5.seconds
-      )
+      val snapshotFuture = dbUtil.batchInsertSnapshots(expId, obsEventName, snapshot.values().asScala.toList, snapshotTable)
 
       //PERSIST KEYWORDS
       val headersValues: List[(String, Option[String])] = SnapshotProcessorUtil.getHeaderData1(obsEventName, snapshot)
+      val KeywordsFuture =
+        dbUtil.batchInsertHeaderData(headersDataTable, s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, headersValues)
+
       Await.result(
-        dbUtil.batchInsertHeaderData(headersDataTable, s"2034A-P054-O010-WFOS-BLU1-SCI1-$i", obsEventName, headersValues),
+        snapshotFuture zip KeywordsFuture,
         5.seconds
       )
 
