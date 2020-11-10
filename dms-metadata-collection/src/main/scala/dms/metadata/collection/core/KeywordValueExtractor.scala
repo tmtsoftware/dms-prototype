@@ -10,8 +10,6 @@ import dms.metadata.collection.config.KeywordConfig.{ComplexKeywordConfig, Const
 import dms.metadata.collection.config.{FitsValue, KeywordConfig, ParamPath}
 
 import scala.collection.mutable
-import scala.util.chaining.scalaUtilChainingOps
-case class FitsKeyword(keyword: String)
 
 class KeywordValueExtractor(headerConfigs: Map[Subsystem, List[KeywordConfig]]) {
 
@@ -19,18 +17,15 @@ class KeywordValueExtractor(headerConfigs: Map[Subsystem, List[KeywordConfig]]) 
       configSubsystem: Subsystem,
       obsEventToProcess: Event,
       snapshot: ConcurrentHashMap[EventKey, Event]
-  ): Map[String, String] = {
-    val headersValues: Map[String, String] =
-      headerConfigs(configSubsystem)
-        .filter(_.obsEventName == obsEventToProcess.eventName.name)
-        .map {
-          case config: ComplexKeywordConfig          => (config.keyword, extract(config, snapshot))
-          case ConstantKeywordConfig(keyword, value) => (keyword, Some(value))
-        }
-        .collect { case (keyword, Some(value)) => keyword -> value }
-        .toMap
-    headersValues
-  }
+  ): Map[String, String] =
+    headerConfigs(configSubsystem)
+      .filter(_.obsEventName == obsEventToProcess.eventName.name)
+      .map {
+        case config: ComplexKeywordConfig          => (config.keyword, extract(config, snapshot))
+        case ConstantKeywordConfig(keyword, value) => (keyword, Some(value))
+      }
+      .collect { case (keyword, Some(value)) => keyword -> value }
+      .toMap
 
   private def getParam(path: List[ParamPath], paramSet: Set[Parameter[_]]): Option[Parameter[_]] = {
     def traverseStruct(paramPath: ParamPath) =
@@ -56,11 +51,11 @@ class KeywordValueExtractor(headerConfigs: Map[Subsystem, List[KeywordConfig]]) 
       snapshot: ConcurrentHashMap[EventKey, Event] // todo: should we change signature?
   ): Option[String] =
     Option(snapshot.get(EventKey(config.eventKey)))
-      .flatMap(e => getParam(config.paramPath, e.paramSet).tap(println))
+      .flatMap(e => getParam(config.paramPath, e.paramSet))
       .map(p => extractValueFromParam(p.items.head, config))
 
-  def extractValueFromParam(value: Any, config: ComplexKeywordConfig): String = {
-    val str = config.attribute.getOrElse(FitsValue.Default)
-    FitsValue.attributeFormats(value)(str)
+  private def extractValueFromParam(value: Any, config: ComplexKeywordConfig): String = {
+    val attribute = config.attribute.getOrElse(FitsValue.Default)
+    FitsValue.attributeFormats(value)(attribute)
   }
 }
