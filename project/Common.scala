@@ -21,8 +21,8 @@ object Common {
         "-unchecked",
         "-deprecation",
         //-W Options
-        "-Wdead-code",
-        if (enableFatalWarnings) "-Wconf:any:error" else "-Wconf:any:warning-verbose",
+//        "-Wdead-code", //  fixme
+//        if (enableFatalWarnings) "-Wconf:any:error" else "-Wconf:any:warning-verbose",
         //-X Options
         "-Xlint:_,-missing-interpolator",
         "-Xsource:3",
@@ -43,7 +43,7 @@ object Common {
       scalafmtOnCompile := true,
       Global / excludeLintKeys := Set(
         SettingKey[Boolean]("ide-skip-project"),
-        aggregate             //verify if this needs to be here or our configuration is wrong
+        aggregate //verify if this needs to be here or our configuration is wrong
       )
     )
 }

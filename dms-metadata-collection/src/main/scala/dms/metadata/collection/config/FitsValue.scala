@@ -2,6 +2,7 @@ package dms.metadata.collection.config
 
 import java.time.format.DateTimeFormatter
 
+import csw.params.core.models.Angle
 import csw.params.core.models.Coords._
 import csw.time.core.models.UTCTime
 
@@ -10,7 +11,7 @@ object FitsValue {
     value match {
       case x: EqCoord =>
         Map(
-          "ra"  -> x.ra.toRadian.toString,
+          "ra"  -> Angle.raToString(x.ra.toRadian),
           "dec" -> x.dec.toRadian.toString
         )
       case x: AltAzCoord =>
@@ -22,12 +23,12 @@ object FitsValue {
         )
       case x: Double =>
         Map(
-          Default  -> x.toString, // Fixme: required? default case is handled in catch all case
+          Default  -> x.toString,
           "custom" -> f"$x%.3f"
         )
       case x: UTCTime =>
         Map(
-          Default -> x.toString, // Fixme: required? default case is handled in catch all case
+          Default -> x.toString,
           "iso"   -> DateTimeFormatter.ISO_INSTANT.format(x.value)
         )
       case x =>

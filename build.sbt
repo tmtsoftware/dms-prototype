@@ -32,7 +32,7 @@ lazy val aggregatedProjects: Seq[ProjectReference] = Seq(
   `dms-metadata-collection`
 )
 
-lazy val root = project
+lazy val `dms-prototype` = project
   .in(file("."))
   .aggregate(aggregatedProjects: _*)
 
