@@ -17,10 +17,10 @@ object PublisherAppWithPerfLikeSetup extends App {
   private val eventService = new EventServiceFactory().make("localhost", 26379)
   private val publisher    = eventService.defaultPublisher
 
-  def publishEvent(noOfEvents: Int, every: FiniteDuration, eventName: String, eventSize: Int) = {
+  def publishEvent(noOfEvents: Int, every: FiniteDuration, eventName: String) = {
     val publisher = eventService.makeNewPublisher()
     (1 to noOfEvents).map { i =>
-      val event = SystemEvent(Prefix(ESW, "filter"), EventName(s"event_key_$i"))
+      val event = SystemEvent(Prefix(ESW, "filter"), EventName(s"${eventName}_$i"))
       publisher.publish(Some(addPayload(event, i)), every)
     }
   }
@@ -31,18 +31,23 @@ object PublisherAppWithPerfLikeSetup extends App {
       .madd(payload2)
       .madd(StringKey.make(s"param_key_$i").set(s"param-value-$i"))
       .madd(StringKey.make(s"param_key_$i$i").set(s"param-value-$i$i"))
-
   }
 
-  def publishObsEvent(name: String, exposureId: String, every: FiniteDuration) = {
-    var counter  = 1
-    val expIdKey = StringKey.make("exposureId")
-    val obsEvent = ObserveEvent(Prefix(ESW, "observe"), EventName(name))
+  def publishObsEvent(exposureId: String, every: FiniteDuration) = {
+
+    def cycle[T](elems: T*): LazyList[T] = LazyList(elems: _*) #::: cycle(elems: _*)
+
+    val iterator   = cycle("exposureStart", "exposureMid", "exposureEnd").iterator
+    def obsEvent() = ObserveEvent(Prefix(ESW, "observe"), EventName(iterator.next()))
+
+    val expIdKey     = StringKey.make("exposureId")
+    val expIdCounter = LazyList.from(0).iterator
 
     def eventGenerator() = {
-      println("publishing observer event : " + counter)
-      counter += 1
-      Some(obsEvent.add(expIdKey.set(s"$exposureId-$counter")))
+      val counter = expIdCounter.next() / 3
+      val event   = obsEvent()
+      println(s"publishing observer event : ${event.eventName} $counter")
+      Some(event.add(expIdKey.set(s"$exposureId-$counter")))
     }
 
     publisher.publish(eventGenerator(), every)
@@ -56,7 +61,7 @@ object PublisherAppWithPerfLikeSetup extends App {
   // ============== TEST BEGINS ============
 
   // ========= Publish ObserveEvent 1 msg/sec =============
-  publishObsEvent("exposureStart", "2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
+  publishObsEvent("2034A-P054-O010-WFOS-BLU1-SCI1", 2.second)
 
   // ========= Publish Fast Event 1 msg/10ms =============
 //  publishEvent(1, 10.millis, "1_10_ms", 5120)
@@ -69,9 +74,9 @@ object PublisherAppWithPerfLikeSetup extends App {
   // 500 keys = 1msg/100ms
   // 300 keys = 1msg/50ms
   // ======================================================
-  publishEvent(500, 1.second, "500_1_sec", 5120)
-  //  publishEvent(500, 500.millis, "500_500_ms", 5120)
-  //  publishEvent(500, 200.millis, "500_200_ms", 5120)
-  //  publishEvent(500, 100.millis, "500_100_ms", 5120)
-  //  publishEvent(300, 50.millis, "300_50_ms", 5120)
+  publishEvent(500, 1.second, "500_1_sec")
+  publishEvent(500, 500.millis, "500_500_ms")
+  publishEvent(500, 200.millis, "500_200_ms")
+  publishEvent(500, 100.millis, "500_100_ms")
+  publishEvent(300, 50.millis, "event_key")
 }

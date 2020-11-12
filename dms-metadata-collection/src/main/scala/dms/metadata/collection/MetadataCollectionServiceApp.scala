@@ -9,10 +9,10 @@ import dms.metadata.collection.core.{DatabaseWriter, KeywordValueExtractor, Meta
 import io.lettuce.core.{RedisClient, RedisURI}
 import org.jooq.DSLContext
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.DurationInt
 
-object Main extends App {
+object MetadataCollectionServiceApp extends App {
 
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
   import system.executionContext

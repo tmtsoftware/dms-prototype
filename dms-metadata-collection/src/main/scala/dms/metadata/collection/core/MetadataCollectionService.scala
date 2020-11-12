@@ -4,8 +4,11 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.Done
 import akka.actor.typed.ActorSystem
+import csw.event.client.EventServiceFactory
 import csw.params.core.generics.KeyType.StringKey
-import csw.params.events.{Event, EventKey, EventName, ObserveEvent}
+import csw.params.events._
+import csw.prefix.models.Prefix
+import csw.prefix.models.Subsystem.WFOS
 import dms.metadata.collection.util.SubsystemExtractor
 
 import scala.concurrent.Future
@@ -17,6 +20,9 @@ class MetadataCollectionService(
 )(implicit actorSystem: ActorSystem[_]) {
 
   import actorSystem.executionContext
+
+  private val eventService = new EventServiceFactory().make("localhost", 26379)
+  private val publisher    = eventService.defaultPublisher
 
   private val inMemoryEventServiceState = new ConcurrentHashMap[EventKey, Event]()
   private val expKey                    = StringKey.make("exposureId")
@@ -33,25 +39,41 @@ class MetadataCollectionService(
     // FIXME IMP: handle exceptions - 1. ClassCast, 2. NoSuchElement etc
     val exposureId: String = obsEvent.asInstanceOf[ObserveEvent](expKey).head
 
+    println("=" * 40)
+    val snapshotStart                                = System.currentTimeMillis()
     val snapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(inMemoryEventServiceState)
+    val snapshotCaptureTime                          = System.currentTimeMillis() - snapshotStart
+    println("capture time " + snapshotCaptureTime)
 
-    val writeResponse = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
+    val snapshotWriteStart = System.currentTimeMillis()
+    val writeResponse      = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
 
-    try {
-      val keywordValues: Map[String, String] =
-        keywordValueExtractor.extractKeywordValuesFor(
-          SubsystemExtractor.extract(exposureId),
-          obsEvent,
-          snapshot
-        )
+    writeResponse.foreach(_ => println("snapshot write time " + (System.currentTimeMillis() - snapshotWriteStart)))
 
-      val headerFuture = databaseConnector.writeKeywordData(exposureId, keywordValues)
-      (writeResponse zip headerFuture).map { _ => Done }
-    } catch {
-      // FIXME why this is required?
-      case exception: Exception => throw exception
-    }
+    val extractStart = System.currentTimeMillis()
+    val keywordValues: Map[String, String] =
+      keywordValueExtractor.extractKeywordValuesFor(
+        SubsystemExtractor.extract(exposureId),
+        obsEvent,
+        snapshot
+      )
+    println("extract time " + (System.currentTimeMillis() - extractStart))
 
+    if (keywordValues.nonEmpty) {
+      val keywordWriteStart = System.currentTimeMillis()
+      val headerFuture      = databaseConnector.writeKeywordData(exposureId, keywordValues)
+      headerFuture.foreach(_ => println("keyword write time " + (System.currentTimeMillis() - keywordWriteStart)))
+
+      (writeResponse zip headerFuture).flatMap { _ =>
+        val x = if (obsEvent.eventName.name == "exposureEnd") {
+          publisher.publish(SystemEvent(Prefix(WFOS, "snapshot"), EventName("snapshotComplete")).madd(obsEvent.paramSet))
+        } else
+          Future.successful(Done)
+
+        println("total time taken " + (System.currentTimeMillis() - snapshotStart))
+        x
+      }
+    } else Future.successful(Done)
   }
 
   //FIXME handle/think about use cases :

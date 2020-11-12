@@ -13,7 +13,8 @@ object Dependencies {
     Seq(
       Csw.`csw-database`,
       Csw.`csw-location-client`,
-      Libs.`nom-tam-fits`
+      Libs.`nom-tam-fits`,
+      Csw.`csw-event-client` //  fixme: remove  this after perf testing
     )
   )
 }
