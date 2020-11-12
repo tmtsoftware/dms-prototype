@@ -5,7 +5,8 @@ object Dependencies {
     Seq(
       Csw.`csw-database`,
       Csw.`csw-location-client`,
-      Csw.`csw-event-client`
+      Csw.`csw-event-client`,
+      Libs.`HdrHistogram` //  fixme: remove  this after perf testing
     )
   )
 
@@ -14,7 +15,8 @@ object Dependencies {
       Csw.`csw-database`,
       Csw.`csw-location-client`,
       Libs.`nom-tam-fits`,
-      Csw.`csw-event-client` //  fixme: remove  this after perf testing
+      Csw.`csw-event-client`, //  fixme: remove  this after perf testing
+      Libs.`HdrHistogram`     //  fixme: remove  this after perf testing
     )
   )
 }

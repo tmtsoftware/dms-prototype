@@ -1,5 +1,9 @@
 package dms.metadata.access
 
+import java.util.concurrent.atomic.AtomicInteger
+
+import akka.Done
+import akka.actor.CoordinatedShutdown
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import csw.database.DatabaseServiceFactory
 import csw.event.client.EventServiceFactory
@@ -9,10 +13,11 @@ import csw.params.events.{EventKey, EventName, SystemEvent}
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.WFOS
 import dms.metadata.access.core.{DatabaseReader, HeaderProcessor}
+import org.HdrHistogram.Histogram
 import org.jooq.DSLContext
 
-import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 
 object MetadataAccessServiceApp extends App {
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
@@ -26,6 +31,14 @@ object MetadataAccessServiceApp extends App {
   private val eventService = new EventServiceFactory().make("localhost", 26379)
   private val subscriber   = eventService.defaultSubscriber
 
+  val count = new AtomicInteger(0)
+
+  // to remove warm up data
+  private def recordValue(histogram: Histogram, value: Long): Unit =
+    if (count.longValue() > 5) histogram.recordValue(value)
+
+  val accessTimeHist = new Histogram(3)
+
   val expIdKey = StringKey.make("exposureId")
 
   println("time taken , count of keywords")
@@ -37,12 +50,21 @@ object MetadataAccessServiceApp extends App {
       val startTime = System.currentTimeMillis()
       metadataAccessService
         .getFITSHeader(exposureId)
-        .foreach(x => println(s"${System.currentTimeMillis() - startTime} , ${x.lines().count()}"))
+        .foreach(x => {
+          val accessTime = System.currentTimeMillis() - startTime
+          recordValue(accessTimeHist, accessTime)
+          count.incrementAndGet()
+          println(s"$accessTime , ${x.lines().count()}")
+        })
     }
 
-//  //TODO start http server
-  //  private val header: String = Await.result(metadataAccessService.getFITSHeader("2034A-P054-O010-IRIS-BLU1-SCI1-1"), 5.seconds)
-  //  println(header)
-
-//  system.terminate()
+  CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeActorSystemTerminate, "plot  results") { () =>
+    println("=" * 80)
+    println("ACCESS SERVICE perf results")
+    println("50 percentile : " + accessTimeHist.getValueAtPercentile(50).toDouble)
+    println("90 percentile : " + accessTimeHist.getValueAtPercentile(90).toDouble)
+    println("99 percentile : " + accessTimeHist.getValueAtPercentile(99).toDouble)
+    println("=" * 80)
+    Future.successful(Done)
+  }
 }

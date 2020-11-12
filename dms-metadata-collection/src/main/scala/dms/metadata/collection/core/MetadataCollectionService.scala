@@ -1,8 +1,10 @@
 package dms.metadata.collection.core
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.Done
+import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import csw.event.client.EventServiceFactory
 import csw.params.core.generics.KeyType.StringKey
@@ -10,6 +12,7 @@ import csw.params.events._
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.WFOS
 import dms.metadata.collection.util.SubsystemExtractor
+import org.HdrHistogram.Histogram
 
 import scala.concurrent.Future
 
@@ -20,12 +23,23 @@ class MetadataCollectionService(
 )(implicit actorSystem: ActorSystem[_]) {
 
   import actorSystem.executionContext
+  val count = new AtomicInteger(0)
 
   private val eventService = new EventServiceFactory().make("localhost", 26379)
   private val publisher    = eventService.defaultPublisher
 
   private val inMemoryEventServiceState = new ConcurrentHashMap[EventKey, Event]()
   private val expKey                    = StringKey.make("exposureId")
+
+  val snapshotCaptureHist = new Histogram(3)
+  val snapshotPersistHist = new Histogram(3)
+  val keywordExtractHist  = new Histogram(3)
+  val keywordPersistHist  = new Histogram(3)
+
+  printResultsTask(snapshotCaptureHist, "SNAPSHOT CAPTURE")
+  printResultsTask(snapshotPersistHist, "SNAPSHOT PERSIST")
+  printResultsTask(keywordExtractHist, "KEYWORD EXTRACT")
+  printResultsTask(keywordPersistHist, "KEYWORD PERSIST")
 
   def start(obsEventNames: Set[EventName]): Future[Done] = {
     val globalEventStreamFuture = startUpdatingInMemoryMap()
@@ -43,12 +57,18 @@ class MetadataCollectionService(
     val snapshotStart                                = System.currentTimeMillis()
     val snapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(inMemoryEventServiceState)
     val snapshotCaptureTime                          = System.currentTimeMillis() - snapshotStart
+    recordValue(snapshotCaptureHist, snapshotCaptureTime)
     println("capture time " + snapshotCaptureTime)
 
     val snapshotWriteStart = System.currentTimeMillis()
-    val writeResponse      = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
+    println("number of eventKeys = " + snapshot.size())
+    val writeResponse = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
 
-    writeResponse.foreach(_ => println("snapshot write time " + (System.currentTimeMillis() - snapshotWriteStart)))
+    writeResponse.foreach(_ => {
+      val snapshotPersistTime = System.currentTimeMillis() - snapshotWriteStart
+      recordValue(snapshotPersistHist, snapshotPersistTime)
+      println("snapshot write time " + snapshotPersistTime)
+    })
 
     val extractStart = System.currentTimeMillis()
     val keywordValues: Map[String, String] =
@@ -57,19 +77,25 @@ class MetadataCollectionService(
         obsEvent,
         snapshot
       )
-    println("extract time " + (System.currentTimeMillis() - extractStart))
+    val keywordExtractTime = System.currentTimeMillis() - extractStart
+    recordValue(keywordExtractHist, keywordExtractTime)
+    println("extract time " + keywordExtractTime)
 
     if (keywordValues.nonEmpty) {
       val keywordWriteStart = System.currentTimeMillis()
       val headerFuture      = databaseConnector.writeKeywordData(exposureId, keywordValues)
-      headerFuture.foreach(_ => println("keyword write time " + (System.currentTimeMillis() - keywordWriteStart)))
+      headerFuture.foreach(_ => {
+        val keywordPersistTime = System.currentTimeMillis() - keywordWriteStart
+        recordValue(keywordPersistHist, keywordPersistTime)
+        println("keyword write time " + keywordPersistTime)
+      })
 
       (writeResponse zip headerFuture).flatMap { _ =>
         val x = if (obsEvent.eventName.name == "exposureEnd") {
           publisher.publish(SystemEvent(Prefix(WFOS, "snapshot"), EventName("snapshotComplete")).madd(obsEvent.paramSet))
         } else
           Future.successful(Done)
-
+        count.incrementAndGet()
         println("total time taken " + (System.currentTimeMillis() - snapshotStart))
         x
       }
@@ -92,4 +118,22 @@ class MetadataCollectionService(
       .mapAsync(10)(captureSnapshot)
       .run()
 
+  // to remove warm up data
+  private def recordValue(histogram: Histogram, value: Long): Unit =
+    if (count.get() > 5) histogram.recordValue(value)
+
+  private def printResultsTask(histogram: Histogram, resultsFor: String): Unit = {
+    CoordinatedShutdown(actorSystem).addTask(
+      CoordinatedShutdown.PhaseBeforeActorSystemTerminate,
+      "plot results for " + resultsFor
+    ) { () =>
+      println("=" * 80)
+      println("Metadata collection perf results for : " + resultsFor)
+      println("50 percentile : " + histogram.getValueAtPercentile(50).toDouble)
+      println("90 percentile : " + histogram.getValueAtPercentile(90).toDouble)
+      println("99 percentile : " + histogram.getValueAtPercentile(99).toDouble)
+      println("=" * 80)
+      Future.successful(Done)
+    }
+  }
 }

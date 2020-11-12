@@ -10,4 +10,5 @@ object Csw {
 
 object Libs {
   val `nom-tam-fits` = "gov.nasa.gsfc.heasarc" % "nom-tam-fits" % "1.15.2"
+  val `HdrHistogram` = "org.hdrhistogram"      % "HdrHistogram" % "2.1.12"
 }
