@@ -31,19 +31,22 @@ object MetadataAccessServiceApp extends App {
   private val eventService = new EventServiceFactory().make("localhost", 26379)
   private val subscriber   = eventService.defaultSubscriber
 
-  val count = new AtomicInteger(0)
+  val accessedCount = new AtomicInteger(0)
+  val warmupCount   = 5                                       // warmupSnapshots of  collection service / 3
+  val totalCount    = warmupCount + 1 /*invalid event*/ + 100 //  10 mins
 
   // to remove warm up data
   private def recordValue(histogram: Histogram, value: Long): Unit =
-    if (count.longValue() > 5) histogram.recordValue(value)
+    if (accessedCount.longValue() > 5) histogram.recordValue(value)
 
   val accessTimeHist = new Histogram(3)
 
   val expIdKey = StringKey.make("exposureId")
 
   println("time taken , count of keywords")
-  subscriber
+  private val metadataAccessServiceDoneF: Future[Done] = subscriber
     .subscribe(Set(EventKey(Prefix(WFOS, "snapshot"), EventName("snapshotComplete"))))
+    .take(totalCount)
     .runForeach { e =>
       val exposureId: String = e.asInstanceOf[SystemEvent](expIdKey).head
 
@@ -53,7 +56,7 @@ object MetadataAccessServiceApp extends App {
         .foreach(x => {
           val accessTime = System.currentTimeMillis() - startTime
           recordValue(accessTimeHist, accessTime)
-          count.incrementAndGet()
+          accessedCount.incrementAndGet()
           println(s"$accessTime , ${x.lines().count()}")
         })
     }
@@ -66,5 +69,9 @@ object MetadataAccessServiceApp extends App {
     println("99 percentile : " + accessTimeHist.getValueAtPercentile(99).toDouble)
     println("=" * 80)
     Future.successful(Done)
+  }
+
+  metadataAccessServiceDoneF.map { _ =>
+    system.terminate()
   }
 }

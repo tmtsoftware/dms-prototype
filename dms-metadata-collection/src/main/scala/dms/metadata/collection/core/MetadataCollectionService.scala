@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
+import csw.event.api.scaladsl.EventSubscription
 import csw.event.client.EventServiceFactory
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events._
@@ -23,7 +24,9 @@ class MetadataCollectionService(
 )(implicit actorSystem: ActorSystem[_]) {
 
   import actorSystem.executionContext
-  val count = new AtomicInteger(0)
+  val capturedSnapshots            = new AtomicInteger(0)
+  val warmupSnapshots              = 15
+  val totalSnapshotsToCapture: Int = warmupSnapshots + 300
 
   private val eventService = new EventServiceFactory().make("localhost", 26379)
   private val publisher    = eventService.defaultPublisher
@@ -42,10 +45,11 @@ class MetadataCollectionService(
   printResultsTask(keywordPersistHist, "KEYWORD PERSIST")
 
   def start(obsEventNames: Set[EventName]): Future[Done] = {
-    val globalEventStreamFuture = startUpdatingInMemoryMap()
+    val globalsubscriptionResult = startUpdatingInMemoryMap()
     Thread.sleep(2000) //Wait for some time so that in-memory map get some time to get eventService current state
-    val observerEventStreamFuture = startCapturingSnapshots(obsEventNames)
-    (globalEventStreamFuture zip observerEventStreamFuture).map(_ => Done)
+    val observerEventSubResult = startCapturingSnapshots(obsEventNames)
+
+    observerEventSubResult._2.flatMap(_ => globalsubscriptionResult._1.unsubscribe())
   }
 
   // FIXME captureSnapshot is very vital, make sure it never throws exception
@@ -95,7 +99,7 @@ class MetadataCollectionService(
           publisher.publish(SystemEvent(Prefix(WFOS, "snapshot"), EventName("snapshotComplete")).madd(obsEvent.paramSet))
         } else
           Future.successful(Done)
-        count.incrementAndGet()
+        capturedSnapshots.incrementAndGet()
         println("total time taken " + (System.currentTimeMillis() - snapshotStart))
         x
       }
@@ -106,21 +110,28 @@ class MetadataCollectionService(
   // When there is a slow publisher and metadata collection starts up after the slow publisher publishes, psubscribe won’t get a value for that event.
   // If metadata collection crashed and was restarted, it would not have all events if they are not changing quickly.
   // So we may need a way to get all keys once when starting
-  private def startUpdatingInMemoryMap(): Future[Done] =
-    metadataSubscriber
+  private def startUpdatingInMemoryMap(): (EventSubscription, Future[Done]) = {
+    val (mat, source) = metadataSubscriber
       .subscribeAll()
-      // TODO try mapAsync and run as it is concurrent hashmap
-      .runForeach { event => inMemoryEventServiceState.put(event.eventKey, event) }
+      .preMaterialize()
 
-  private def startCapturingSnapshots(obsEventNames: Set[EventName]): Future[Done] =
-    metadataSubscriber
+    // TODO try mapAsync and run as it is concurrent hashmap
+    val eventualDone = source.runForeach { event => inMemoryEventServiceState.put(event.eventKey, event) }
+    (mat, eventualDone)
+  }
+
+  private def startCapturingSnapshots(obsEventNames: Set[EventName]): (EventSubscription, Future[Done]) = {
+    val (mat, source) = metadataSubscriber
       .subscribeObsEvents(obsEventNames)
+      .take(totalSnapshotsToCapture)
       .mapAsync(10)(captureSnapshot)
-      .run()
+      .preMaterialize()
+    (mat, source.run())
+  }
 
   // to remove warm up data
   private def recordValue(histogram: Histogram, value: Long): Unit =
-    if (count.get() > 5) histogram.recordValue(value)
+    if (capturedSnapshots.get() > warmupSnapshots) histogram.recordValue(value)
 
   private def printResultsTask(histogram: Histogram, resultsFor: String): Unit = {
     CoordinatedShutdown(actorSystem).addTask(
