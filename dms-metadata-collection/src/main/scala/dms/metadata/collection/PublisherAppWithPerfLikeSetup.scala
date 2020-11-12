@@ -1,4 +1,4 @@
-package simulator
+package dms.metadata.collection
 
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import csw.event.client.EventServiceFactory
