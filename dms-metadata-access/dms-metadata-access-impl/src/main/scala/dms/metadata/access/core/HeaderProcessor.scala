@@ -4,6 +4,7 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.prefix.models.Subsystem
+import csw.prefix.models.Subsystem.{IRIS, WFOS}
 import nom.tam.fits.Header
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -11,14 +12,10 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 class HeaderProcessor {
 
   def loadHeaderList(): Map[Subsystem, List[String]] = {
-    val config: Config = ConfigFactory.parseResources("header-keywords.conf")
-    val subsystemNames = config.root().keySet().asScala.toList
-    subsystemNames.map { subsystemName =>
-      val maybeSubsystem = Subsystem.withNameInsensitiveOption(subsystemName)
-      maybeSubsystem match {
-        case Some(subsystem) => subsystem -> config.getStringList(subsystemName).asScala.toList
-        case None            => throw new RuntimeException(s"Invalid Subsystem Name : $subsystemName received from header-keywords.conf")
-      }
+    val config: Config              = ConfigFactory.parseResources("header-keywords.conf")
+    val subsystems: List[Subsystem] = List(IRIS, WFOS) // FIXME Should this be passed as config/ or consider all subsystem
+    subsystems.map { subsystem =>
+      subsystem -> config.resolve().getStringList(subsystem.name).asScala.toList
     }.toMap
   }
 
