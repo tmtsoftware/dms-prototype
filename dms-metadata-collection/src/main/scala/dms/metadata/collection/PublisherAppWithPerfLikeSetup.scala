@@ -74,9 +74,8 @@ object PublisherAppWithPerfLikeSetup extends App {
   // 500 keys = 1msg/100ms
   // 300 keys = 1msg/50ms
   // ======================================================
-  publishEvent(500, 1.second, "500_1_sec")
-  publishEvent(500, 500.millis, "500_500_ms")
-  publishEvent(500, 200.millis, "500_200_ms")
-  publishEvent(500, 100.millis, "500_100_ms")
-  publishEvent(300, 50.millis, "event_key")
+  publishEvent(1000, 1.second, "500_1_sec")    // 1000
+  publishEvent(1000, 500.millis, "500_500_ms") // 2000
+  publishEvent(50, 50.millis, "50_20_ms")      // 50 * 20 = 1000
+  publishEvent(300, 200.millis, "event_key")   // 300 * 5 = 1500
 }

@@ -45,11 +45,11 @@ class MetadataCollectionService(
   printResultsTask(keywordPersistHist, "KEYWORD PERSIST")
 
   def start(obsEventNames: Set[EventName]): Future[Done] = {
-    val globalsubscriptionResult = startUpdatingInMemoryMap()
+    val globalSubscriptionResult = startUpdatingInMemoryMap()
     Thread.sleep(2000) //Wait for some time so that in-memory map get some time to get eventService current state
     val observerEventSubResult = startCapturingSnapshots(obsEventNames)
 
-    observerEventSubResult._2.flatMap(_ => globalsubscriptionResult._1.unsubscribe())
+    observerEventSubResult._2.flatMap(_ => globalSubscriptionResult._1.unsubscribe())
   }
 
   // FIXME captureSnapshot is very vital, make sure it never throws exception

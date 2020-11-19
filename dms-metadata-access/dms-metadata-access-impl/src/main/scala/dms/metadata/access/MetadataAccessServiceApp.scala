@@ -37,7 +37,7 @@ object MetadataAccessServiceApp extends App {
 
   // to remove warm up data
   private def recordValue(histogram: Histogram, value: Long): Unit =
-    if (accessedCount.longValue() > 5) histogram.recordValue(value)
+    if (accessedCount.longValue() > warmupCount) histogram.recordValue(value)
 
   val accessTimeHist = new Histogram(3)
 
