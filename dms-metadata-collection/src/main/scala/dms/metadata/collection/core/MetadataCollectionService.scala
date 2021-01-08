@@ -1,11 +1,13 @@
 package dms.metadata.collection.core
 
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{ConcurrentHashMap, Executors}
 
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.Source
 import csw.event.api.scaladsl.EventSubscription
 import csw.event.client.EventServiceFactory
 import csw.params.core.generics.KeyType.StringKey
@@ -15,7 +17,8 @@ import csw.prefix.models.Subsystem.WFOS
 import dms.metadata.collection.util.SubsystemExtractor
 import org.HdrHistogram.Histogram
 
-import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 
 class MetadataCollectionService(
     metadataSubscriber: MetadataSubscriber,
@@ -25,8 +28,8 @@ class MetadataCollectionService(
 
   import actorSystem.executionContext
   val capturedSnapshots            = new AtomicInteger(0)
-  val warmupSnapshots              = 15
-  val totalSnapshotsToCapture: Int = warmupSnapshots + 300
+  val warmupSnapshots              = 30
+  val totalSnapshotsToCapture: Int = 300000
 
   private val eventService = new EventServiceFactory().make("localhost", 26379)
   private val publisher    = eventService.defaultPublisher
@@ -38,11 +41,13 @@ class MetadataCollectionService(
   val snapshotPersistHist = new Histogram(3)
   val keywordExtractHist  = new Histogram(3)
   val keywordPersistHist  = new Histogram(3)
+  val totalTimeHist       = new Histogram(3)
 
   printResultsTask(snapshotCaptureHist, "SNAPSHOT CAPTURE")
   printResultsTask(snapshotPersistHist, "SNAPSHOT PERSIST")
   printResultsTask(keywordExtractHist, "KEYWORD EXTRACT")
   printResultsTask(keywordPersistHist, "KEYWORD PERSIST")
+  printResultsTask(totalTimeHist, "TOTAL TIME")
 
   def start(obsEventNames: Set[EventName]): Future[Done] = {
     val globalSubscriptionResult = startUpdatingInMemoryMap()
@@ -53,17 +58,22 @@ class MetadataCollectionService(
   }
 
   // FIXME captureSnapshot is very vital, make sure it never throws exception
-  def captureSnapshot(obsEvent: Event): Future[Done] = {
+  def captureSnapshot(obsEvent: Event): Future[(Event, ConcurrentHashMap[EventKey, Event], Long)] =
+    Future {
+      val snapshotStart = System.currentTimeMillis()
+      val tuple: (Event, ConcurrentHashMap[EventKey, Event], Long) =
+        (obsEvent, new ConcurrentHashMap(inMemoryEventServiceState), snapshotStart)
+      val captureTime = System.currentTimeMillis() - snapshotStart
+      println("=" * 40)
+      println("capture time = " + captureTime)
+      recordValue(snapshotCaptureHist, captureTime)
+      tuple
+    }(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
+
+  // FIXME captureSnapshot is very vital, make sure it never throws exception
+  def saveSnapshot(obsEvent: Event, snapshot: ConcurrentHashMap[EventKey, Event], snapshotStart: Long): Future[Done] = {
     // FIXME IMP: handle exceptions - 1. ClassCast, 2. NoSuchElement etc
     val exposureId: String = obsEvent.asInstanceOf[ObserveEvent](expKey).head
-
-    println("=" * 40)
-    val snapshotStart                                = System.currentTimeMillis()
-    val snapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(inMemoryEventServiceState)
-    val snapshotCaptureTime                          = System.currentTimeMillis() - snapshotStart
-    recordValue(snapshotCaptureHist, snapshotCaptureTime)
-    println("capture time " + snapshotCaptureTime)
-
     val snapshotWriteStart = System.currentTimeMillis()
     println("number of eventKeys = " + snapshot.size())
     val writeResponse = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
@@ -95,13 +105,14 @@ class MetadataCollectionService(
       })
 
       (writeResponse zip headerFuture).flatMap { _ =>
-        val x = if (obsEvent.eventName.name == "exposureEnd") {
+        if (obsEvent.eventName.name == "exposureEnd") {
           publisher.publish(SystemEvent(Prefix(WFOS, "snapshot"), EventName("snapshotComplete")).madd(obsEvent.paramSet))
-        } else
-          Future.successful(Done)
+        }
         capturedSnapshots.incrementAndGet()
-        println("total time taken " + (System.currentTimeMillis() - snapshotStart))
-        x
+        val endTime = System.currentTimeMillis() - snapshotStart
+        recordValue(totalTimeHist, endTime)
+        println("total time taken " + endTime)
+        Future.successful(Done)
       }
     } else Future.successful(Done)
   }
@@ -123,15 +134,19 @@ class MetadataCollectionService(
   private def startCapturingSnapshots(obsEventNames: Set[EventName]): (EventSubscription, Future[Done]) = {
     val (mat, source) = metadataSubscriber
       .subscribeObsEvents(obsEventNames)
-      .take(totalSnapshotsToCapture)
-      .mapAsync(10)(captureSnapshot)
+      .drop(warmupSnapshots)
+      .buffer(100, OverflowStrategy.dropHead)
+      .mapAsync(1)(captureSnapshot)
+      .mapAsyncUnordered(4) {
+        case (obsEvent, snapshot, snapshotStartTime) => saveSnapshot(obsEvent, snapshot, snapshotStartTime)
+      }
       .preMaterialize()
     (mat, source.run())
   }
 
   // to remove warm up data
   private def recordValue(histogram: Histogram, value: Long): Unit =
-    if (capturedSnapshots.get() > warmupSnapshots) histogram.recordValue(value)
+    histogram.recordValue(value)
 
   private def printResultsTask(histogram: Histogram, resultsFor: String): Unit = {
     CoordinatedShutdown(actorSystem).addTask(

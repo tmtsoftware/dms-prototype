@@ -44,8 +44,11 @@ object PublisherAppWithPerfLikeSetup extends App {
     val expIdCounter = LazyList.from(0).iterator
 
     def eventGenerator() = {
-      val counter = expIdCounter.next() / 3
-      val event   = obsEvent()
+      val warmUp         = 10 // total warmup will become 10*3=>30, i.e. 10 each for exposureStart,exposureMid,exposureEnd
+      val totalSnapshots = 30 //total snapshots will become 30*3=>90, i.e. 30 each for exposureStart,exposureMid,exposureEnd
+      val counter        = expIdCounter.next() / 3
+      if (counter >= totalSnapshots + warmUp) System.exit(1)
+      val event = obsEvent()
       println(s"publishing observer event : ${event.eventName} $counter")
       Some(event.add(expIdKey.set(s"$exposureId-$counter")))
     }
@@ -61,7 +64,7 @@ object PublisherAppWithPerfLikeSetup extends App {
   // ============== TEST BEGINS ============
 
   // ========= Publish ObserveEvent 1 msg/sec =============
-  publishObsEvent("2034A-P054-O010-WFOS-BLU1-SCI1", 2.second)
+  publishObsEvent("2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
 
   // ========= Publish Fast Event 1 msg/10ms =============
 //  publishEvent(1, 10.millis, "1_10_ms", 5120)
