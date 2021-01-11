@@ -7,7 +7,6 @@ import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Source
 import csw.event.api.scaladsl.EventSubscription
 import csw.event.client.EventServiceFactory
 import csw.params.core.generics.KeyType.StringKey
@@ -17,7 +16,6 @@ import csw.prefix.models.Subsystem.WFOS
 import dms.metadata.collection.util.SubsystemExtractor
 import org.HdrHistogram.Histogram
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 class MetadataCollectionService(
