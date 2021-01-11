@@ -9,7 +9,7 @@ import csw.params.events.{Event, EventKey}
 import io.bullet.borer.Json
 import org.jooq.DSLContext
 
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters.CompletionStageOps
 
@@ -28,7 +28,7 @@ class DatabaseWriter(dslContext: DSLContext)(implicit actorSystem: ActorSystem[_
       case (header, value) => query.bind(expId, header, value)
     }
 
-    blocking { query.executeAsync().asScala.map(_ => Done) } // FIXME this blocking does not make sense here
+    query.executeAsync().asScala.map(_ => Done)
   }
 
   def writeSnapshot(expId: String, obsEventName: String, snapshot: ConcurrentHashMap[EventKey, Event]): Future[Done] = {
@@ -47,7 +47,7 @@ class DatabaseWriter(dslContext: DSLContext)(implicit actorSystem: ActorSystem[_
         Json.encode(event.paramSet).toUtf8String
       )
     }
-    blocking { query.executeAsync().asScala.map(_ => Done) } // FIXME this blocking does not make sense here
+    query.executeAsync().asScala.map(_ => Done)
   }
 
 }

@@ -1,14 +1,15 @@
 package dms.metadata.collection.core
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, Executors}
 
 import akka.Done
 import akka.actor.typed.ActorSystem
+import akka.stream.OverflowStrategy
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{Event, EventKey, EventName, ObserveEvent}
 import dms.metadata.collection.util.SubsystemExtractor
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class MetadataCollectionService(
     metadataSubscriber: MetadataSubscriber,
@@ -29,11 +30,9 @@ class MetadataCollectionService(
   }
 
   // FIXME captureSnapshot is very vital, make sure it never throws exception
-  def captureSnapshot(obsEvent: Event): Future[Done] = {
+  def saveSnapshot(obsEvent: Event, snapshot: ConcurrentHashMap[EventKey, Event]): Future[Done] = {
     // FIXME IMP: handle exceptions - 1. ClassCast, 2. NoSuchElement etc
     val exposureId: String = obsEvent.asInstanceOf[ObserveEvent](expKey).head
-
-    val snapshot: ConcurrentHashMap[EventKey, Event] = new ConcurrentHashMap(inMemoryEventServiceState)
 
     val writeResponse = databaseConnector.writeSnapshot(exposureId, obsEvent.eventName.name, snapshot)
 
@@ -54,6 +53,11 @@ class MetadataCollectionService(
 
   }
 
+  def captureSnapshot(obsEvent: Event): Future[(Event, ConcurrentHashMap[EventKey, Event])] =
+    Future {
+      obsEvent -> new ConcurrentHashMap(inMemoryEventServiceState)
+    }(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
+
   //FIXME handle/think about use cases :
   // When there is a slow publisher and metadata collection starts up after the slow publisher publishes, psubscribe won’t get a value for that event.
   // If metadata collection crashed and was restarted, it would not have all events if they are not changing quickly.
@@ -67,7 +71,11 @@ class MetadataCollectionService(
   private def startCapturingSnapshots(obsEventNames: Set[EventName]): Future[Done] =
     metadataSubscriber
       .subscribeObsEvents(obsEventNames)
-      .mapAsync(10)(captureSnapshot)
+      .buffer(100, OverflowStrategy.dropHead)
+      .mapAsync(1)(captureSnapshot)
+      .mapAsyncUnordered(4) {
+        case (obsEvent, snapshot) => saveSnapshot(obsEvent, snapshot)
+      }
       .run()
 
 }
