@@ -14,9 +14,8 @@ object ParquetToDeltaEventsStreamJob {
   def main(args: Array[String]): Unit = {
 
     FileUtils.deleteDirectory(new File("target/data"))
-    println(Paths.get(".").toAbsolutePath.normalize.toString)
     val file = new File("target/data/temp")
-//    val file = new File("/Users/himanshu/projects/tmt/parquet-experiment/target/data/parquet-streams")
+//    val file = new File("target/data/parquet-streams")
     file.mkdirs()
 
     val spark = SparkSession

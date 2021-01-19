@@ -18,12 +18,4 @@ object EventServiceMock {
       }
       .take(92000)
   }
-
-  def captureSnapshot(exposureId: Long, obsEventName: String): Seq[SystemEventRecord] = {
-    (1 to 2300).map(_ => SystemEventRecord.generate(EventFactory.generateEvent()))
-  }
-
-  def captureSnapshot2(exposureId: Long, obsEventName: String): Seq[SystemEventRecord2] = {
-    (1 to 2300).map(_ => SystemEventRecord2.generate(exposureId, obsEventName, EventFactory.generateEvent()))
-  }
 }
