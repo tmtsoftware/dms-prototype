@@ -6,7 +6,7 @@ import org.apache.spark.sql.{Encoders, SparkSession}
 
 import scala.concurrent.duration.DurationInt
 
-object ParquetToDeltaStreamingJob {
+object P2DStreamingJob {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession
       .builder()
