@@ -7,28 +7,27 @@ import csw.params.events.SystemEvent
 import io.bullet.borer.Json
 
 case class SystemEventRecord(
+    date: String,
     hour: String,
     minute: String,
     source: String,
     eventId: String,
     eventName: String,
     eventTime: String,
-    seconds: Long,
-    nanos: Long,
     paramSet: String
 )
 
 object SystemEventRecord {
   def generate(systemEvent: SystemEvent): SystemEventRecord = {
+    val time = LocalDateTime.ofInstant(systemEvent.eventTime.value, ZoneOffset.UTC)
     SystemEventRecord(
-      LocalDateTime.ofInstant(systemEvent.eventTime.value, ZoneOffset.UTC).getHour.toString,
-      LocalDateTime.ofInstant(systemEvent.eventTime.value, ZoneOffset.UTC).getMinute.toString,
+      time.toLocalDate.toString,
+      time.getHour.toString,
+      time.getMinute.toString,
       systemEvent.source.toString(),
       systemEvent.eventId.id,
       systemEvent.eventName.name,
       systemEvent.eventTime.value.toString,
-      systemEvent.eventTime.value.getEpochSecond,
-      systemEvent.eventTime.value.getNano,
       Json.encode(systemEvent.paramSet).toUtf8String
     )
   }

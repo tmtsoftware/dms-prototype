@@ -1,4 +1,4 @@
-package exp.jobs
+package exp.jobs.coversion
 
 import exp.api.SystemEventRecord
 import org.apache.spark.sql.streaming.Trigger
@@ -6,7 +6,7 @@ import org.apache.spark.sql.{Encoders, SparkSession}
 
 import scala.concurrent.duration.DurationInt
 
-object ParquetToDeltaEventsJob {
+object ParquetToDeltaStreamingJob {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession
       .builder()
@@ -22,8 +22,6 @@ object ParquetToDeltaEventsJob {
       .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
       .getOrCreate()
 
-    import spark.implicits._
-
     val dataFrame = spark.readStream
       .format("parquet")
       .schema(Encoders.product[SystemEventRecord].schema)
@@ -33,7 +31,7 @@ object ParquetToDeltaEventsJob {
 
     val query = dataFrame.writeStream
       .format("delta")
-      .partitionBy("exposureId", "obsEventName")
+      .partitionBy("date", "hour", "minute")
       .option("checkpointLocation", "target/data/cp/backup")
 //      .option("checkpointLocation", "hdfs://localhost:8020/target/data/cp/backup")
 //      .option("checkpointLocation", "s3a://bucket1/target/data/cp/backup")

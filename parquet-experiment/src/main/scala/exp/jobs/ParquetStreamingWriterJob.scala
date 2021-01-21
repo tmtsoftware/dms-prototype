@@ -47,7 +47,7 @@ object ParquetStreamingWriterJob {
           .withMaxCount(maxCount)
           .withMaxDuration(5.seconds)
           .withWriteOptions(writeOptions)
-          .withPartitionBy("hour", "minute")
+          .withPartitionBy("date", "hour", "minute")
           .build()
       )
       .statefulMapConcat { () =>
@@ -72,4 +72,3 @@ object ParquetStreamingWriterJob {
       }
   }
 }
-

@@ -47,7 +47,7 @@ object ParquetStreamingWriterJobWithSwapping {
           .withMaxCount(1000)
           .withMaxDuration(5.seconds)
           .withWriteOptions(writeOptions)
-          .withPartitionBy("hour", "minute")
+          .withPartitionBy("date", "hour", "minute")
           .build()
       )
       .statefulMapConcat { () =>
@@ -57,8 +57,8 @@ object ParquetStreamingWriterJobWithSwapping {
           if (previousMinute == "invalid") previousMinute = eventRecord.minute
           if (previousMinute != eventRecord.minute) {
             val dataDir = "target/data"
-            val fromDir = s"$dataDir/parquet-streams/hour=${eventRecord.hour}/minute=$previousMinute"
-            val toDir   = s"$dataDir/temp/hour=${eventRecord.hour}/minute=$previousMinute"
+            val fromDir = s"$dataDir/parquet-streams/date=${eventRecord.date}/hour=${eventRecord.hour}/minute=$previousMinute"
+            val toDir   = s"$dataDir/temp/date=${eventRecord.date}/hour=${eventRecord.hour}/minute=$previousMinute"
             println(s"Moving - $fromDir to $toDir")
             FileUtils.moveDirectory(new File(fromDir), new File(toDir))
             println("Done")

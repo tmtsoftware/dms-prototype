@@ -1,4 +1,4 @@
-package exp.jobs
+package exp.jobs.writer
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors

@@ -14,7 +14,7 @@ class SparkTable(spark: SparkSession, tablePath: String, format: String) {
   private val file = new File(tablePath)
 
   def create(): Unit = {
-    Seq.empty[SystemEventRecord].toDF().write.partitionBy("exposureId", "obsEventName").format(format).save(tablePath)
+    Seq.empty[SystemEventRecord].toDF().write.partitionBy("date", "hour", "minute").format(format).save(tablePath)
   }
 
   def delete(): Unit = {
@@ -30,7 +30,7 @@ class SparkTable(spark: SparkSession, tablePath: String, format: String) {
     Future {
       blocking {
         val start = System.currentTimeMillis()
-        batch.toDF().write.mode("append").partitionBy("exposureId", "obsEventName").format(format).save(tablePath)
+        batch.toDF().write.mode("append").partitionBy("date", "hour", "minute").format(format).save(tablePath)
         val current = System.currentTimeMillis()
         println(s"Finished writing items: ${batch.length} in ${current - start} milliseconds >>>>>>>>>>>>>>>>>>")
       }

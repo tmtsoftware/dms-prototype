@@ -1,37 +1,36 @@
 package exp.api
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 import exp.data.ParamSetJson
 
 case class SystemEventRecord(
+    date: String,
+    hour: String,
+    minute: String,
     source: String,
     eventId: String,
     eventName: String,
     eventTime: String,
-    seconds: Long,
-    nanos: Long,
-    paramSet: String,
-    hour: String,
-    minute: String
+    paramSet: String
 )
 
 object SystemEventRecord {
-  def generate(): SystemEventRecord = generate(0, "startEvent", UUID.randomUUID().toString)
+  def generate(): SystemEventRecord = generate(UUID.randomUUID().toString)
 
-  def generate(exposureId: Long, obsEventName: String, eventId: String): SystemEventRecord = {
+  def generate(eventId: String): SystemEventRecord = {
     val instant = Instant.now()
+    val time    = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
     SystemEventRecord(
+      time.toLocalDate.toString,
+      time.getHour.toString,
+      time.getMinute.toString,
       "wfos.blue.filter",
       eventId,
       "filter wheel",
       instant.toString,
-      instant.getEpochSecond,
-      instant.getNano,
-      ParamSetJson.jsonString,
-      obsEventName,
-      exposureId.toString
+      ParamSetJson.jsonString
     )
   }
 }

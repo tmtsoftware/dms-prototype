@@ -1,16 +1,15 @@
-package exp.jobs
+package exp.jobs.coversion
 
 import java.io.File
-import java.nio.file.Paths
 
-import exp.api.SystemEventRecord
+import exp.api.SystemEventRecord2
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.{Encoders, SparkSession}
 
 import scala.concurrent.duration.DurationInt
 
-object ParquetToDeltaEventsStreamJob {
+object P2DStreamingSwappingFileWatcherJob {
   def main(args: Array[String]): Unit = {
 
     FileUtils.deleteDirectory(new File("target/data"))
@@ -34,7 +33,7 @@ object ParquetToDeltaEventsStreamJob {
 
     val dataFrame = spark.readStream
       .format("parquet")
-      .schema(Encoders.product[SystemEventRecord].schema)
+      .schema(Encoders.product[SystemEventRecord2].schema)
       .load("target/data/temp")
 //      .load("target/data/parquet-streams")
 //      .load("hdfs://localhost:8020/target/data/parquet-streams")

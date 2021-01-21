@@ -1,4 +1,4 @@
-package exp.jobs
+package exp.jobs.writer
 
 import akka.Done
 import akka.actor.typed.ActorSystem
