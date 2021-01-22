@@ -4,7 +4,8 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import csw.params.core.formats.ParamCodecs._
 import csw.params.events.SystemEvent
-import io.bullet.borer.Json
+import io.bullet.borer.derivation.MapBasedCodecs
+import io.bullet.borer.{Codec, Json}
 
 case class SystemEventRecord(
     date: String,
@@ -31,4 +32,7 @@ object SystemEventRecord {
       Json.encode(systemEvent.paramSet).toUtf8String
     )
   }
+
+  implicit lazy val seCodec: Codec[SystemEventRecord] = MapBasedCodecs.deriveCodec
+
 }
