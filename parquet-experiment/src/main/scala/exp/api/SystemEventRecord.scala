@@ -1,11 +1,11 @@
 package exp.api
 
-import java.time.{LocalDateTime, ZoneOffset}
-
 import csw.params.core.formats.ParamCodecs._
-import csw.params.events.SystemEvent
+import csw.params.events.Event
 import io.bullet.borer.derivation.MapBasedCodecs
 import io.bullet.borer.{Codec, Json}
+
+import java.time.{LocalDateTime, ZoneOffset}
 
 case class SystemEventRecord(
     date: String,
@@ -19,7 +19,7 @@ case class SystemEventRecord(
 )
 
 object SystemEventRecord {
-  def generate(systemEvent: SystemEvent): SystemEventRecord = {
+  def generate(systemEvent: Event): SystemEventRecord = {
     val time = LocalDateTime.ofInstant(systemEvent.eventTime.value, ZoneOffset.UTC)
     SystemEventRecord(
       time.toLocalDate.toString,

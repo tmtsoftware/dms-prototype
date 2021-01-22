@@ -1,13 +1,16 @@
 package exp.writer
 
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
-import java.util.UUID
-
 import akka.actor.typed.{ActorSystem, DispatcherSelector}
-import exp.api.SystemEventRecord
+import csw.params.events.Event
 import io.bullet.borer.Json
 
+import java.io.{BufferedOutputStream, FileOutputStream, OutputStream}
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.util.UUID
 import scala.concurrent.{ExecutionContextExecutor, Future}
+import csw.params.core.formats.ParamCodecs._
+
+import java.util.zip.GZIPOutputStream
 import scala.jdk.CollectionConverters.IterableHasAsJava
 
 class JsonIO(path: String)(implicit actorSystem: ActorSystem[_]) {
@@ -20,13 +23,13 @@ class JsonIO(path: String)(implicit actorSystem: ActorSystem[_]) {
   Files.createDirectories(targetDir)
   Files.createDirectories(tmpDir)
 
-  def writeJson(batch: Seq[SystemEventRecord]): Future[Path] =
+  def write(batch: Seq[Event]): Future[Path] =
     Future {
       val uuid          = UUID.randomUUID().toString
-      val tmpLocation   = tmpDir.resolve(s"$uuid.json")
-      val finalLocation = targetDir.resolve(s"$uuid.json")
-      val lines         = batch.map(x => Json.encode(x).toUtf8String).asJava
-      Files.write(tmpLocation, lines)
+      val tmpLocation   = tmpDir.resolve(s"$uuid.json.gz")
+      val finalLocation = targetDir.resolve(s"$uuid.json.gz")
+      val os: OutputStream = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(tmpLocation.toFile)))
+      Json.encode(batch).to(os).result.close()
       Files.move(tmpLocation, finalLocation, StandardCopyOption.ATOMIC_MOVE)
     }(blockingEC)
 

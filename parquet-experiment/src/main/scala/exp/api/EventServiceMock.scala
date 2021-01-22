@@ -3,19 +3,17 @@ package exp.api
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import csw.EventFactory
-
-import scala.concurrent.duration.DurationInt
+import csw.params.events.Event
 
 object EventServiceMock {
-  def eventStream(): Source[SystemEventRecord, NotUsed] = {
-    val eventIds = Iterator.from(1)
+  def eventRecordStream(): Source[SystemEventRecord, NotUsed] = {
+    eventStream().map(event => SystemEventRecord.generate(event))
+  }
 
+  def eventStream(): Source[Event, NotUsed] = {
     Source
-      .fromIterator(() => eventIds)
-      .throttle(1, 1.millis)
-      .map { eventId =>
-        SystemEventRecord.generate(EventFactory.generateEvent(eventId))
-      }
-      .take(92000)
+      .fromIterator(() => Iterator.from(1))
+      .map(eventId => EventFactory.generateEvent(eventId))
+      .take(200000)
   }
 }

@@ -40,7 +40,7 @@ object ParquetStreamingWriterJobWithSwapping {
 
     var previousMinute = "invalid"
     EventServiceMock
-      .eventStream()
+      .eventRecordStream()
       .via(
         ParquetStreams
           .viaParquet(Constants.StreamingDir)

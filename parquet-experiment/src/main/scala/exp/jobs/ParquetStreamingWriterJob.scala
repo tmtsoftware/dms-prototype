@@ -40,7 +40,7 @@ object ParquetStreamingWriterJob {
 
     val maxCount = 1000
     EventServiceMock
-      .eventStream()
+      .eventRecordStream()
       .via(
         ParquetStreams
           .viaParquet(Constants.StreamingDir)

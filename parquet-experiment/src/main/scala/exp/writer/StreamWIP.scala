@@ -19,7 +19,7 @@ object StreamWIP {
     import actorSystem.executionContext
 
     EventServiceMock
-      .eventStream()
+      .eventRecordStream()
       .via(
         ParquetStreams
           .viaParquet("target/data/parquet2")

@@ -16,7 +16,7 @@ object CaptureAsParquet {
     val parquetIO = new ParquetIO("target/data/parquet")
 
     EventServiceMock
-      .eventStream()
+      .eventRecordStream()
       .groupedWithin(10000, 5.seconds)
       .mapAsync(1) { batch =>
         parquetIO.write(batch).map(_ => batch.length)

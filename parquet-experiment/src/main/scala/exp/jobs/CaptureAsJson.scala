@@ -19,7 +19,7 @@ object CaptureAsJson {
       .eventStream()
       .groupedWithin(10000, 5.seconds)
       .mapAsync(1) { batch =>
-        jsonIO.writeJson(batch).map(_ => batch.length)
+        jsonIO.write(batch).map(_ => batch.length)
       }
       .statefulMapConcat { () =>
         var start = System.currentTimeMillis()
