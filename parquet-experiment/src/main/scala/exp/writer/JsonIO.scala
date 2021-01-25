@@ -1,19 +1,19 @@
 package exp.writer
 
 import akka.actor.typed.{ActorSystem, DispatcherSelector}
+import csw.params.core.formats.ParamCodecs._
 import csw.params.events.Event
 import io.bullet.borer.Json
+import org.apache.hadoop.fs
+import org.apache.hadoop.fs.FileSystem
 
 import java.io.{BufferedOutputStream, FileOutputStream, OutputStream}
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.util.UUID
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import csw.params.core.formats.ParamCodecs._
-
 import java.util.zip.GZIPOutputStream
-import scala.jdk.CollectionConverters.IterableHasAsJava
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
-class JsonIO(path: String)(implicit actorSystem: ActorSystem[_]) {
+class JsonIO(path: String, fileSystem: FileSystem)(implicit actorSystem: ActorSystem[_]) {
 
   private val blockingEC: ExecutionContextExecutor = actorSystem.dispatchers.lookup(DispatcherSelector.blocking())
 
@@ -25,12 +25,25 @@ class JsonIO(path: String)(implicit actorSystem: ActorSystem[_]) {
 
   def write(batch: Seq[Event]): Future[Path] =
     Future {
-      val uuid          = UUID.randomUUID().toString
-      val tmpLocation   = tmpDir.resolve(s"$uuid.json.gz")
-      val finalLocation = targetDir.resolve(s"$uuid.json.gz")
+      val uuid             = UUID.randomUUID().toString
+      val tmpLocation      = tmpDir.resolve(s"$uuid.json.gz")
+      val finalLocation    = targetDir.resolve(s"$uuid.json.gz")
       val os: OutputStream = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(tmpLocation.toFile)))
       Json.encode(batch).to(os).result.close()
       Files.move(tmpLocation, finalLocation, StandardCopyOption.ATOMIC_MOVE)
+    }(blockingEC)
+
+  def writeHdfs(batch: Seq[Event]): Future[Boolean] =
+    Future {
+      val uuid          = UUID.randomUUID().toString
+      val fileName      = s"$uuid.json.gz"
+      val tmpLocation   = new fs.Path("/tmp/json", fileName)
+      val finalLocation = new fs.Path(path, fileName)
+
+      val os: OutputStream = new BufferedOutputStream(new GZIPOutputStream(fileSystem.create(tmpLocation)))
+      Json.encode(batch).to(os).result.close()
+
+      fileSystem.rename(tmpLocation, finalLocation)
     }(blockingEC)
 
 }
