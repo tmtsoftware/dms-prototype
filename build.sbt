@@ -106,3 +106,26 @@ lazy val `delta-writer` = project
       "-Xfuture"
     )
   )
+
+lazy val `archival-ingestor` = project
+  .settings(
+    scalaVersion := "2.13.3",
+    resolvers += "jitpack" at "https://jitpack.io",
+    libraryDependencies ++= Seq(
+      "com.github.tmtsoftware.csw" %% "csw-event-client" % "04eaee2",
+      "org.apache.hadoop"           % "hadoop-client"    % "3.3.0"
+    ),
+    scalacOptions ++= Seq(
+      "-encoding",
+      "UTF-8",
+      "-feature",
+      "-unchecked",
+      "-deprecation",
+      "-Wconf:any:warning-verbose",
+      "-Wdead-code",
+      "-Xlint:_,-missing-interpolator,-byname-implicit",
+      "-Xsource:3",
+      "-Xcheckinit"
+      //      "-Xasync" does not work with Scala.js js yet
+    )
+  )

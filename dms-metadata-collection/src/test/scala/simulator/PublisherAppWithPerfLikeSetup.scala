@@ -9,6 +9,7 @@ import csw.params.events.{EventName, ObserveEvent, SystemEvent}
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.ESW
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object PublisherAppWithPerfLikeSetup extends App {
@@ -17,18 +18,27 @@ object PublisherAppWithPerfLikeSetup extends App {
   private val eventService = new EventServiceFactory().make("localhost", 26379)
   private val publisher    = eventService.defaultPublisher
 
+  var count = new AtomicInteger()
   def publishEvent(noOfEvents: Int, every: FiniteDuration, eventName: String, eventSize: Int) = {
     val publisher = eventService.makeNewPublisher()
     (1 to noOfEvents).map { i =>
       val event = SystemEvent(Prefix(ESW, "filter"), EventName(s"event_key_$i"))
-      publisher.publish(Some(addPayload(event, i)), every)
+      publisher.publish(
+        {
+          if (count.incrementAndGet() >= 15000) {
+            System.exit(0)
+          }
+          Some(addPayload(event, i))
+        },
+        every
+      )
     }
   }
 
   def addPayload(event: SystemEvent, i: Int): SystemEvent = {
     val payload2: Set[Parameter[_]] = ParamSetData.paramSet
     event
-      .madd(payload2)
+//      .madd(payload2)
       .madd(StringKey.make(s"param_key_$i").set(s"param-value-$i"))
       .madd(StringKey.make(s"param_key_$i$i").set(s"param-value-$i$i"))
 
@@ -56,7 +66,7 @@ object PublisherAppWithPerfLikeSetup extends App {
   // ============== TEST BEGINS ============
 
   // ========= Publish ObserveEvent 1 msg/sec =============
-  publishObsEvent("exposureStart", "2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
+//  publishObsEvent("exposureStart", "2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
 
   // ========= Publish Fast Event 1 msg/10ms =============
 //  publishEvent(1, 10.millis, "1_10_ms", 5120)
@@ -69,9 +79,9 @@ object PublisherAppWithPerfLikeSetup extends App {
   // 500 keys = 1msg/100ms
   // 300 keys = 1msg/50ms
   // ======================================================
-  publishEvent(500, 1.second, "500_1_sec", 5120)
-  //  publishEvent(500, 500.millis, "500_500_ms", 5120)
-  //  publishEvent(500, 200.millis, "500_200_ms", 5120)
-  //  publishEvent(500, 100.millis, "500_100_ms", 5120)
-  //  publishEvent(300, 50.millis, "300_50_ms", 5120)
+  publishEvent(500, 1.second, "500_1_sec", 5120)    //500
+  publishEvent(500, 500.millis, "500_500_ms", 5120) //1000
+//  publishEvent(500, 200.millis, "500_200_ms", 5120) //2500
+//  publishEvent(500, 100.millis, "500_100_ms", 5120) //5000
+//  publishEvent(300, 50.millis, "300_50_ms", 5120)   //6000
 }
