@@ -1,9 +1,9 @@
-package dms.eng.archive
+package eng.arch.ingestor
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import dms.eng.archive.core.EventGlobalSubscriber
-import dms.eng.archive.util.JsonIO
+import eng.arch.ingestor.core.EventGlobalSubscriber
+import eng.arch.ingestor.util.JsonIO
 import io.lettuce.core.{RedisClient, RedisURI}
 
 import scala.concurrent.duration.DurationInt

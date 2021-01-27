@@ -1,4 +1,4 @@
-package dms.eng.archive.util
+package eng.arch.ingestor.util
 
 import java.nio.ByteBuffer
 

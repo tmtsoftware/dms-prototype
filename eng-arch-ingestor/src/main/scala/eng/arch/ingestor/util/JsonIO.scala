@@ -1,4 +1,4 @@
-package dms.eng.archive.util
+package eng.arch.ingestor.util
 
 import java.io.{BufferedOutputStream, FileOutputStream, OutputStream}
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}

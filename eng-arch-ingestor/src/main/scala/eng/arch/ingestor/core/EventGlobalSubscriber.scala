@@ -1,4 +1,4 @@
-package dms.eng.archive.core
+package eng.arch.ingestor.core
 
 import akka.actor.typed.ActorSystem
 import akka.stream.scaladsl.Source
@@ -11,7 +11,7 @@ import romaine.reactive.{RedisSubscription, RedisSubscriptionApi}
 import scala.concurrent.Future
 
 class EventGlobalSubscriber(redisURI: RedisURI, redisClient: RedisClient)(implicit actorSystem: ActorSystem[_]) {
-  import dms.eng.archive.util.RomaineCodecs._
+  import eng.arch.ingestor.util.RomaineCodecs._
   import actorSystem.executionContext
 
   private lazy val romaineFactory   = new RomaineFactory(redisClient)

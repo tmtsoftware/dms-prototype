@@ -107,7 +107,7 @@ lazy val `delta-writer` = project
     )
   )
 
-lazy val `archival-ingestor` = project
+lazy val `eng-arch-ingestor` = project
   .settings(
     scalaVersion := "2.13.3",
     resolvers += "jitpack" at "https://jitpack.io",
