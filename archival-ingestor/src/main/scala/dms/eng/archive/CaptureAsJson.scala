@@ -23,11 +23,14 @@ object CaptureAsJson {
     val jsonIO           = new JsonIO("target/data/json")
     val startTime        = System.currentTimeMillis()
 
-    globalSubscriber
-      .subscribeAll()
-      .take(15000)
+    EventServiceMock
+      .publishEvent(100, 10, 10.millis)
+//    globalSubscriber
+//      .subscribeAll()
+//      .buffer(100000, OverflowStrategy.dropHead)
+      .take(500000)
       .groupedWithin(10000, 5.seconds)
-      .mapAsync(1) { batch =>
+      .mapAsync(4) { batch =>
         jsonIO.write(batch).map(_ => batch.length)
       }
       .statefulMapConcat { () =>
