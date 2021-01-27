@@ -1,37 +1,32 @@
 package eng.arch.ingestor
 
+import java.net.URI
+
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import eng.arch.ingestor.core.EventGlobalSubscriber
 import eng.arch.ingestor.util.JsonIO
-import io.lettuce.core.{RedisClient, RedisURI}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem
 
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
-object CaptureAsJson {
+object JsonIngestor {
   def main(args: Array[String]): Unit = {
     implicit lazy val actorSystem: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "demo")
     import actorSystem.executionContext
 
-    val eventServicePort         = 26379
-    val host                     = "localhost"
-    val redisClient: RedisClient = RedisClient.create()
-    val redisURI: RedisURI       = RedisURI.Builder.sentinel(host, eventServicePort, "eventServer").build()
+    val conf                   = new Configuration
+    val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
+    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
 
-    val globalSubscriber = new EventGlobalSubscriber(redisURI, redisClient)
-    val jsonIO           = new JsonIO("target/data/json")
-    val startTime        = System.currentTimeMillis()
-
+    val startTime = System.currentTimeMillis()
     EventServiceMock
-      .publishEvent(100, 10, 10.millis)
-//    globalSubscriber
-//      .subscribeAll()
-//      .buffer(100000, OverflowStrategy.dropHead)
+      .eventStream(100, 1, 10.millis)
       .take(500000)
       .groupedWithin(10000, 5.seconds)
-      .mapAsync(4) { batch =>
-        jsonIO.write(batch).map(_ => batch.length)
+      .mapAsync(1) { batch =>
+        jsonIO.writeHdfs(batch).map(_ => batch.length)
       }
       .statefulMapConcat { () =>
         var start = System.currentTimeMillis()
@@ -43,11 +38,12 @@ object CaptureAsJson {
       }
       .run()
       .onComplete { x =>
-        actorSystem.terminate()
         x match {
           case Failure(exception) => exception.printStackTrace()
           case Success(value)     => print(s"TOTAL TIME ${System.currentTimeMillis() - startTime}")
         }
+        actorSystem.terminate()
+        EventServiceMock.system.terminate()
       }
   }
 }
