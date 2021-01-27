@@ -37,7 +37,7 @@ class JsonIO(path: String, fileSystem: FileSystem)(implicit actorSystem: ActorSy
     Future {
       val uuid          = UUID.randomUUID().toString
       val fileName      = s"$uuid.json.gz"
-      val tmpLocation   = new fs.Path("/tmp/json", fileName)
+      val tmpLocation   = new fs.Path("hdfs://localhost:9000" + "/tmp/json", fileName)
       val finalLocation = new fs.Path(path, fileName)
 
       val os: OutputStream = new BufferedOutputStream(new GZIPOutputStream(fileSystem.create(tmpLocation)))

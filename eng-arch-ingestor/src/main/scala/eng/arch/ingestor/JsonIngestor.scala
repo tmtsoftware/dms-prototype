@@ -16,9 +16,11 @@ object JsonIngestor {
     implicit lazy val actorSystem: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "demo")
     import actorSystem.executionContext
 
-    val conf                   = new Configuration
-    val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
-    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
+    val conf = new Configuration
+//    val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
+//    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
+    val fileSystem: FileSystem = FileSystem.get(new URI("hdfs://localhost:9000/"), conf)
+    val jsonIO                 = new JsonIO("hdfs://localhost:9000/" + "/data/json", fileSystem)
 
     val startTime = System.currentTimeMillis()
     EventServiceMock
@@ -26,6 +28,7 @@ object JsonIngestor {
       .take(500000)
       .groupedWithin(10000, 5.seconds)
       .mapAsync(1) { batch =>
+        println("writing")
         jsonIO.writeHdfs(batch).map(_ => batch.length)
       }
       .statefulMapConcat { () =>
