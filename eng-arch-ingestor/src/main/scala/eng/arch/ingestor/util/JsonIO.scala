@@ -18,7 +18,7 @@ class JsonIO(path: String, fileSystem: FileSystem)(implicit actorSystem: ActorSy
   private val blockingEC: ExecutionContextExecutor = actorSystem.dispatchers.lookup(DispatcherSelector.blocking())
 
   private val targetDir: Path = Paths.get(path)
-  private val tmpDir: Path    = Paths.get("/tmp/json")
+  private val tmpDir: Path    = Paths.get("/tmp/tmp")
 
 //  Files.createDirectories(targetDir)
 //  Files.createDirectories(tmpDir)
@@ -37,13 +37,14 @@ class JsonIO(path: String, fileSystem: FileSystem)(implicit actorSystem: ActorSy
     Future {
       val uuid          = UUID.randomUUID().toString
       val fileName      = s"$uuid.json.gz"
-      val tmpLocation   = new fs.Path("hdfs://localhost:9000/tmp/json", fileName)
-      val finalLocation = new fs.Path(path, fileName)
+      val tmpLocation   = new fs.Path(fileSystem.getUri.resolve(tmpDir.resolve(fileName).toAbsolutePath.toString))
+      val finalLocation = new fs.Path(fileSystem.getUri.resolve(targetDir.resolve(fileName).toAbsolutePath.toString))
 
       val os: OutputStream = new BufferedOutputStream(new GZIPOutputStream(fileSystem.create(tmpLocation)))
       Json.encode(batch).to(os).result.close()
 
       fileSystem.rename(tmpLocation, finalLocation)
+      fileSystem.delete(tmpLocation, true)
     }(blockingEC)
 
 }

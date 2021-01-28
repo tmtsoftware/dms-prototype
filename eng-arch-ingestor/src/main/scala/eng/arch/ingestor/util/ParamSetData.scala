@@ -14,14 +14,14 @@ import java.time.Instant
 
 object ParamSetData {
   // Simple Key's
-  private val p1 = BooleanKey.make("BooleanKey").set(true, false)
-  private val p2 = ByteKey.make("ByteKey").setAll(Array[Byte](10, 20))
-  private val p3 = CharKey.make("CharKey").set('A', 'B')
-  private val p4 = ShortKey.make("ShortKey").setAll(Array[Short](30, 40))
-  private val p5 = LongKey.make("LongKey").setAll(Array[Long](50, 60))
-  private val p6 = IntKey.make("IntKey").set(70, 80)
-  private val p7 = FloatKey.make("FloatKey").setAll(Array[Float](90, 100))
-  private val p8 = DoubleKey.make("DoubleKey").setAll(Array[Double](110, 120))
+  private val p1 = BooleanKey.make("BooleanKey123").set(true, false)
+  private val p2 = ByteKey.make("ByteKey123").setAll(Array[Byte](10, 20))
+  private val p3 = CharKey.make("CharKey123").set('A', 'B')
+  private val p4 = ShortKey.make("ShortKey123").setAll(Array[Short](30, 40))
+  private val p5 = LongKey.make("LongKey123").setAll(Array[Long](50, 60))
+  private val p6 = IntKey.make("IntKey123").set(70, 80)
+  private val p7 = FloatKey.make("FloatKey123").setAll(Array[Float](90, 100))
+  private val p8 = DoubleKey.make("DoubleKey123").setAll(Array[Double](110, 120))
   private val p9 =
     UTCTimeKey
       .make("UTCTimeKey")
@@ -33,26 +33,27 @@ object ParamSetData {
       .set(TAITime(Instant.ofEpochMilli(0)), TAITime(Instant.parse("2017-09-04T19:00:00.123456789Z")))
 
   // ArrayData Key's
-  private val p11 = ByteArrayKey.make("ByteArrayKey").set(ArrayData.fromArray(Array[Byte](1, 2)))
-  private val p12 = ShortArrayKey.make("ShortArrayKey").set(ArrayData.fromArray(Array[Short](3, 4)))
-  private val p13 = LongArrayKey.make("LongArrayKey").set(ArrayData.fromArray(Array[Long](5, 6)))
-  private val p14 = IntArrayKey.make("IntArrayKey").set(ArrayData.fromArray(Array(7, 8)))
-  private val p15 = FloatArrayKey.make("FloatArrayKey").set(ArrayData.fromArray(Array[Float](9, 10)))
-  private val p16 = DoubleArrayKey.make("DoubleArrayKey").set(ArrayData.fromArray(Array[Double](11, 12)))
+  private val p11 = ByteArrayKey.make("ByteArrayKey123").set(ArrayData.fromArray(Array[Byte](1, 2)))
+  private val p12 = ShortArrayKey.make("ShortArrayKey123").set(ArrayData.fromArray(Array[Short](3, 4)))
+  private val p13 = LongArrayKey.make("LongArrayKey123").set(ArrayData.fromArray(Array[Long](5, 6)))
+  private val p14 = IntArrayKey.make("IntArrayKey123").set(ArrayData.fromArray(Array(7, 8)))
+  private val p15 = FloatArrayKey.make("FloatArrayKey123").set(ArrayData.fromArray(Array[Float](9, 10)))
+  private val p16 = DoubleArrayKey.make("DoubleArrayKey123").set(ArrayData.fromArray(Array[Double](11, 12)))
   // MatrixData Key's
-  private val p17 = ByteMatrixKey.make("ByteMatrix").set(MatrixData.fromArrays(Array[Byte](1, 2), Array[Byte](3, 4)))
-  private val p18 = ShortMatrixKey.make("ShortMatrix").set(MatrixData.fromArrays(Array[Short](4, 5), Array[Short](6, 7)))
-  private val p19 = LongMatrixKey.make("LongMatrix").set(MatrixData.fromArrays(Array[Long](8, 9), Array[Long](10, 11)))
-  private val p20 = IntMatrixKey.make("IntMatrix").set(MatrixData.fromArrays(Array(12, 13), Array(14, 15)))
-  private val p21 = FloatMatrixKey.make("FloatMatrix").set(MatrixData.fromArrays(Array[Float](16, 17), Array[Float](18, 19)))
-  private val p22 = DoubleMatrixKey.make("DoubleMatrix").set(MatrixData.fromArrays(Array[Double](20, 21), Array[Double](22, 23)))
+  private val p17 = ByteMatrixKey.make("ByteMatrix123").set(MatrixData.fromArrays(Array[Byte](1, 2), Array[Byte](3, 4)))
+  private val p18 = ShortMatrixKey.make("ShortMatrix123").set(MatrixData.fromArrays(Array[Short](4, 5), Array[Short](6, 7)))
+  private val p19 = LongMatrixKey.make("LongMatrix123").set(MatrixData.fromArrays(Array[Long](8, 9), Array[Long](10, 11)))
+  private val p20 = IntMatrixKey.make("IntMatrix123").set(MatrixData.fromArrays(Array(12, 13), Array(14, 15)))
+  private val p21 = FloatMatrixKey.make("FloatMatrix123").set(MatrixData.fromArrays(Array[Float](16, 17), Array[Float](18, 19)))
+  private val p22 =
+    DoubleMatrixKey.make("DoubleMatrix123").set(MatrixData.fromArrays(Array[Double](20, 21), Array[Double](22, 23)))
   // RaDec Key
-  private val p23 = RaDecKey.make("RaDecKey").set(RaDec(7.3, 12.1))
+  private val p23 = RaDecKey.make("RaDecKey123").set(RaDec(7.3, 12.1))
   // Choice Key
   private val p24 = ChoiceKey.make("ChoiceKey", NoUnits, Choices.from("First", "Second")).set("First", "Second")
   // Struct Key
-  private val p25 = StructKey.make("StructKey").set(Struct(Set(p1, p2)))
-  private val p26 = StringKey.make("StringKey").set("abc")
+  private val p25 = StructKey.make("StructKey123").set(Struct(Set(p1, p2)))
+  private val p26 = StringKey.make("StringKey123").set("abc")
 
   private val pm               = ProperMotion(0.5, 2.33)
   private val eqCoord          = EqCoord(ra = "12:13:14.15", dec = "-30:31:32.3", frame = FK5, pmx = pm.pmx, pmy = pm.pmy)
@@ -60,7 +61,7 @@ object ParamSetData {
   private val minorPlanetCoord = MinorPlanetCoord(Tag("GUIDER1"), 2000, 90.degree, 2.degree, 100.degree, 1.4, 0.234, 220.degree)
   private val cometCoord       = CometCoord(Tag("BASE"), 2000.0, 90.degree, 2.degree, 100.degree, 1.4, 0.234)
   private val altAzCoord       = AltAzCoord(Tag("BASE"), 301.degree, 42.5.degree)
-  private val p27              = CoordKey.make("CoordKey").set(eqCoord, solarSystemCoord, minorPlanetCoord, cometCoord, altAzCoord)
+  private val p27              = CoordKey.make("CoordKey123").set(eqCoord, solarSystemCoord, minorPlanetCoord, cometCoord, altAzCoord)
 
   private def paramSet0: Set[Parameter[_]] =
     Set(
@@ -94,9 +95,9 @@ object ParamSetData {
       p1000
     )
 
-  private def p1000 = UTCTimeKey.make("UTCTimeKey1").set(UTCTime.now())
+  private def p1000 = UTCTimeKey.make("UTCTimeKey123").set(UTCTime.now())
 
-  def paramSet: Set[Parameter[_]] = paramSet0 //++ Set(StructKey.make("StructKey1").set(Struct(paramSet0)))
+  def paramSet: Set[Parameter[_]] = paramSet0 //++ Set(StructKey.make("StructKey1123").set(Struct(paramSet0)))
 
-  def smallData: Set[Parameter[_]] = Set(StringKey.make("StringKey").set("1" * 128))
+  def smallData: Set[Parameter[_]] = Set(StringKey.make("StringKey123").set("1" * 128))
 }

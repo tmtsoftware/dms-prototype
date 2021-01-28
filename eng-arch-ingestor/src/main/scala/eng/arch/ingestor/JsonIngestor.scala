@@ -18,16 +18,15 @@ object JsonIngestor {
 
     val conf = new Configuration
 //    val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
-//    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
-    val fileSystem: FileSystem = FileSystem.get(new URI("hdfs://localhost:9000"), conf)
-    val jsonIO                 = new JsonIO("hdfs://localhost:9000/data/json", fileSystem)
+    val fileSystem: FileSystem = FileSystem.get(new URI("hdfs://localhost:8020/"), conf)
+    val jsonIO                 = new JsonIO("/tmp/json", fileSystem)
 
-    val eventServiceMock = new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 4, every = 10.millis)
+    val eventServiceMock = new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 1, every = 10.millis)
 
     val startTime = System.currentTimeMillis()
     eventServiceMock
       .subscribeAll()
-      .take(400000)
+      .take(100000)
       .groupedWithin(10000, 5.seconds)
       .mapAsync(4) { batch =>
         val start = System.currentTimeMillis()

@@ -1,11 +1,10 @@
 package exp.jobs.coversion
 
-import java.io.File
-import exp.api.SystemEventRecord
 import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.{DataType, StructType}
-import org.apache.spark.sql.{Encoders, SparkSession}
 
+import java.io.File
 import java.nio.file.{Files, Paths}
 
 object JsonToDelta {
@@ -23,8 +22,8 @@ object JsonToDelta {
       .getOrCreate()
 
     val schema = DataType.fromJson(Files.readString(Paths.get("delta-writer/src/main/resources/schema.json")))
-    import spark.implicits._
     import org.apache.spark.sql.functions._
+    import spark.implicits._
 
     val dataFrame = spark.readStream
       .format("json")
