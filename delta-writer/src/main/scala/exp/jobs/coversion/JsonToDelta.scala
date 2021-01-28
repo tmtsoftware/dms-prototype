@@ -11,9 +11,8 @@ import java.nio.file.{Files, Paths}
 object JsonToDelta {
   def main(args: Array[String]): Unit = {
 
-//    FileUtils.deleteDirectory(new File("target/data"))
-//    val file = new File("target/data/json")
-//    file.mkdirs()
+    FileUtils.deleteDirectory(new File("target/data"))
+    new File("target/data/json").mkdirs()
 
     val spark = SparkSession
       .builder()
@@ -40,7 +39,7 @@ object JsonToDelta {
 
     val query = dataFrame.writeStream
       .format("delta")
-      .partitionBy("year", "month", "day")
+      .partitionBy("year", "month", "day", "source", "eventName")
       .option("checkpointLocation", "target/data/cp/backup")
       //      .trigger(Trigger.ProcessingTime(1.seconds))
       .start("target/data/delta")

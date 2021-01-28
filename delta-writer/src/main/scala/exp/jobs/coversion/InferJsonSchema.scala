@@ -19,7 +19,6 @@ object InferJsonSchema {
       .option("multiLine", value = true)
       .load("target/data/json")
 
-
     Files.writeString(Paths.get("target/data/schema.json"), df.schema.prettyJson)
 
     df.printSchema()

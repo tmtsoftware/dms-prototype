@@ -22,23 +22,19 @@ object JsonIngestor {
     val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
     val jsonIO                 = new JsonIO("target/data/json", fileSystem)
 
-    val eventServiceMock = new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 10, every = 10.millis)
+    val eventServiceMock = new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 4, every = 10.millis)
 
     val startTime = System.currentTimeMillis()
     eventServiceMock
       .subscribeAll()
-      .take(1000000)
+      .take(400000)
       .groupedWithin(10000, 5.seconds)
-      .mapAsync(10) { batch =>
-        jsonIO.writeHdfs(batch).map(_ => batch.length)
-      }
-      .statefulMapConcat { () =>
-        var start = System.currentTimeMillis()
-        batchSize =>
+      .mapAsync(4) { batch =>
+        val start = System.currentTimeMillis()
+        jsonIO.writeHdfs(batch).map { _ =>
           val current = System.currentTimeMillis()
-          println(s"Finished writing batch size $batchSize in ${current - start} milliseconds >>>>>>>>>>>>>>>>>>>>")
-          start = current
-          List(batchSize)
+          println(s"Finished writing batch size ${batch.length} in ${current - start} milliseconds >>>>>>>>>>>>>>>>>>>>")
+        }
       }
       .run()
       .onComplete { x =>

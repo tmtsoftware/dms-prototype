@@ -4,10 +4,9 @@ import akka.actor.typed.ActorSystem
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
 import akka.{Done, NotUsed}
-import csw.params.core.generics.KeyType.StringKey
 import csw.params.events.{EventName, SystemEvent}
-import csw.prefix.models.Prefix
-import csw.prefix.models.Subsystem.ESW
+import csw.prefix.models.{Prefix, Subsystem}
+import eng.arch.ingestor.util.ParamSetData
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -17,30 +16,25 @@ class EventServiceMock(noOfPublishers: Int, eventsPerPublisher: Int, every: Fini
 ) {
 
   def subscribeAll(): Source[SystemEvent, NotUsed] = {
-    Source(1 to noOfPublishers).flatMapMerge(
-      noOfPublishers,
-      publisherId => subscribe(publisherId)
-    )
+    Source(1 to noOfPublishers).flatMapMerge(noOfPublishers, _ => subscribe())
   }
 
-  def subscribe(publisherId: Int): Source[SystemEvent, Future[Done]] = {
+  def subscribe(): Source[SystemEvent, Future[Done]] = {
     Source.queue[SystemEvent](1024, OverflowStrategy.dropHead).mapMaterializedValue { redisQueue =>
-      publisher(publisherId).runForeach(redisQueue.offer)
+      publisher().runForeach(redisQueue.offer)
     }
   }
 
-  def publisher(publisherId: Int): Source[SystemEvent, NotUsed] = {
+  def publisher(): Source[SystemEvent, NotUsed] = {
+    val subsystems = Iterator.from(1).flatMap(_ => Subsystem.values.iterator)
+    val ids        = Iterator.from(1).flatMap(_ => 1 to 10)
     Source
       .fromIterator(() => Iterator.from(1))
-      .map(_ => createEvent(publisherId))
+      .map(_ => createEvent(subsystems.next(), ids.next()))
       .throttle(eventsPerPublisher, every)
   }
 
-  def createEvent(streamId: Int): SystemEvent =
-    SystemEvent(Prefix(ESW, "filter"), EventName(s"event_key_$streamId"))
-      .madd(
-        StringKey.make(s"param_key_1").set(s"param-value-1"),
-        StringKey.make(s"param_key_22").set(s"param-value-22"),
-        StringKey.make(s"param_key_333").set(s"param-value-333")
-      )
+  def createEvent(subsystem: Subsystem, eventId: Int): SystemEvent = {
+    SystemEvent(Prefix(subsystem, "filter"), EventName(s"event_key_$eventId")).madd(ParamSetData.smallData)
+  }
 }
