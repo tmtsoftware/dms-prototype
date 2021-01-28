@@ -1086,6 +1086,42 @@
                                     "metadata": {}
                                   },
                                   {
+                                    "name": "ByteArrayKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": "long",
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
                                     "name": "ByteKey",
                                     "type": {
                                       "type": "struct",
@@ -1107,6 +1143,960 @@
                                           "type": {
                                             "type": "array",
                                             "elementType": "long",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "ByteMatrixKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": {
+                                                "type": "array",
+                                                "elementType": "long",
+                                                "containsNull": true
+                                              },
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "CharKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "string",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "ChoiceKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "string",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "CoordKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "struct",
+                                              "fields": [
+                                                {
+                                                  "name": "_type",
+                                                  "type": "string",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "alt",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "argOfPerihelion",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "az",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "body",
+                                                  "type": "string",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "catalogName",
+                                                  "type": "string",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "dec",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "eccentricity",
+                                                  "type": "double",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "epoch",
+                                                  "type": "double",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "epochOfPerihelion",
+                                                  "type": "double",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "frame",
+                                                  "type": "string",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "inclination",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "longAscendingNode",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "meanAnomaly",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "meanDistance",
+                                                  "type": "double",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "perihelionDistance",
+                                                  "type": "double",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "pm",
+                                                  "type": {
+                                                    "type": "struct",
+                                                    "fields": [
+                                                      {
+                                                        "name": "pmx",
+                                                        "type": "double",
+                                                        "nullable": true,
+                                                        "metadata": {}
+                                                      },
+                                                      {
+                                                        "name": "pmy",
+                                                        "type": "double",
+                                                        "nullable": true,
+                                                        "metadata": {}
+                                                      }
+                                                    ]
+                                                  },
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "ra",
+                                                  "type": "long",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "tag",
+                                                  "type": "string",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                }
+                                              ]
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "DoubleArrayKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": "double",
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "DoubleKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "double",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "DoubleMatrixKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": {
+                                                "type": "array",
+                                                "elementType": "double",
+                                                "containsNull": true
+                                              },
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "FloatArrayKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": "double",
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "FloatKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "double",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "FloatMatrixKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": {
+                                                "type": "array",
+                                                "elementType": "double",
+                                                "containsNull": true
+                                              },
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "IntArrayKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": "long",
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "IntKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "long",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "IntMatrixKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": {
+                                                "type": "array",
+                                                "elementType": "long",
+                                                "containsNull": true
+                                              },
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "LongArrayKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": "long",
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "LongKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "long",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "LongMatrixKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": {
+                                                "type": "array",
+                                                "elementType": "long",
+                                                "containsNull": true
+                                              },
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "RaDecKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "struct",
+                                              "fields": [
+                                                {
+                                                  "name": "dec",
+                                                  "type": "double",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                },
+                                                {
+                                                  "name": "ra",
+                                                  "type": "double",
+                                                  "nullable": true,
+                                                  "metadata": {}
+                                                }
+                                              ]
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "ShortArrayKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": "long",
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "ShortKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "long",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "ShortMatrixKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": {
+                                              "type": "array",
+                                              "elementType": {
+                                                "type": "array",
+                                                "elementType": "long",
+                                                "containsNull": true
+                                              },
+                                              "containsNull": true
+                                            },
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "StringKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "string",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "TAITimeKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "string",
+                                            "containsNull": true
+                                          },
+                                          "nullable": true,
+                                          "metadata": {}
+                                        }
+                                      ]
+                                    },
+                                    "nullable": true,
+                                    "metadata": {}
+                                  },
+                                  {
+                                    "name": "UTCTimeKey",
+                                    "type": {
+                                      "type": "struct",
+                                      "fields": [
+                                        {
+                                          "name": "keyName",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "units",
+                                          "type": "string",
+                                          "nullable": true,
+                                          "metadata": {}
+                                        },
+                                        {
+                                          "name": "values",
+                                          "type": {
+                                            "type": "array",
+                                            "elementType": "string",
                                             "containsNull": true
                                           },
                                           "nullable": true,

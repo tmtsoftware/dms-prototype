@@ -41,7 +41,8 @@ object JsonToDelta {
       .partitionBy("year", "month", "day", "source", "eventName")
       .option("checkpointLocation", "target/data/cp/backup")
       //      .trigger(Trigger.ProcessingTime(1.seconds))
-      .start("target/data/delta")
+//      .start("target/data/delta")
+      .start("hdfs://localhost:8020/data/delta")
 
     query.awaitTermination()
   }

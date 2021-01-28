@@ -19,7 +19,7 @@ object JsonIngestor {
     val conf = new Configuration
 //    val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
     val fileSystem: FileSystem = FileSystem.get(new URI("hdfs://localhost:8020/"), conf)
-    val jsonIO                 = new JsonIO("/tmp/json", fileSystem)
+    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
 
     val eventServiceMock = new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 1, every = 10.millis)
 
@@ -30,7 +30,7 @@ object JsonIngestor {
       .groupedWithin(10000, 5.seconds)
       .mapAsync(4) { batch =>
         val start = System.currentTimeMillis()
-        jsonIO.writeHdfs(batch).map { _ =>
+        jsonIO.write(batch).map { _ =>
           val current = System.currentTimeMillis()
           println(s"Finished writing batch size ${batch.length} in ${current - start} milliseconds >>>>>>>>>>>>>>>>>>>>")
         }
