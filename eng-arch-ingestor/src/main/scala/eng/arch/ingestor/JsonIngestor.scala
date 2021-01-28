@@ -27,7 +27,7 @@ object JsonIngestor {
     val startTime = System.currentTimeMillis()
     eventServiceMock
       .subscribeAll()
-      .take(4000000)
+      .take(400000)
       .groupedWithin(10000, 5.seconds)
       .mapAsync(4) { batch =>
         val start = System.currentTimeMillis()
