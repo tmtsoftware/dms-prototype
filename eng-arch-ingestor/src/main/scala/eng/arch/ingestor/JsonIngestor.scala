@@ -19,16 +19,17 @@ object JsonIngestor {
     val conf = new Configuration
 //    val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
 //    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
-    val fileSystem: FileSystem = FileSystem.get(new URI("hdfs://localhost:9000/"), conf)
-    val jsonIO                 = new JsonIO("hdfs://localhost:9000/" + "/data/json", fileSystem)
+    val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
+    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
+
+    val eventServiceMock = new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 10, every = 10.millis)
 
     val startTime = System.currentTimeMillis()
-    EventServiceMock
-      .eventStream(100, 1, 10.millis)
-      .take(500000)
+    eventServiceMock
+      .subscribeAll()
+      .take(1000000)
       .groupedWithin(10000, 5.seconds)
-      .mapAsync(1) { batch =>
-        println("writing")
+      .mapAsync(10) { batch =>
         jsonIO.writeHdfs(batch).map(_ => batch.length)
       }
       .statefulMapConcat { () =>
@@ -46,7 +47,6 @@ object JsonIngestor {
           case Success(value)     => print(s"TOTAL TIME ${System.currentTimeMillis() - startTime}")
         }
         actorSystem.terminate()
-        EventServiceMock.system.terminate()
       }
   }
 }

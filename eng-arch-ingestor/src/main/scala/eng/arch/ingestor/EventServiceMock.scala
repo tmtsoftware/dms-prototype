@@ -1,7 +1,6 @@
 package eng.arch.ingestor
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, SpawnProtocol}
+import akka.actor.typed.ActorSystem
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
 import akka.{Done, NotUsed}
@@ -13,30 +12,35 @@ import csw.prefix.models.Subsystem.ESW
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
-object EventServiceMock {
-  implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(Behaviors.empty, "bla")
+class EventServiceMock(noOfPublishers: Int, eventsPerPublisher: Int, every: FiniteDuration)(implicit
+    actorSystem: ActorSystem[_]
+) {
 
-  def publish(streamId: Int, noOfEvents: Int, every: FiniteDuration): Source[SystemEvent, Future[Done]] = {
-    Source.queue[SystemEvent](1024, OverflowStrategy.dropHead).mapMaterializedValue { q =>
-      stream(streamId).throttle(noOfEvents, every).runForeach(q.offer)
+  def subscribeAll(): Source[SystemEvent, NotUsed] = {
+    Source(1 to noOfPublishers).flatMapMerge(
+      noOfPublishers,
+      publisherId => subscribe(publisherId)
+    )
+  }
+
+  def subscribe(publisherId: Int): Source[SystemEvent, Future[Done]] = {
+    Source.queue[SystemEvent](1024, OverflowStrategy.dropHead).mapMaterializedValue { redisQueue =>
+      publisher(publisherId).runForeach(redisQueue.offer)
     }
   }
 
-  def createEvent(streamId: Int) =
+  def publisher(publisherId: Int): Source[SystemEvent, NotUsed] = {
+    Source
+      .fromIterator(() => Iterator.from(1))
+      .map(_ => createEvent(publisherId))
+      .throttle(eventsPerPublisher, every)
+  }
+
+  def createEvent(streamId: Int): SystemEvent =
     SystemEvent(Prefix(ESW, "filter"), EventName(s"event_key_$streamId"))
       .madd(
         StringKey.make(s"param_key_1").set(s"param-value-1"),
         StringKey.make(s"param_key_22").set(s"param-value-22"),
         StringKey.make(s"param_key_333").set(s"param-value-333")
       )
-
-  def stream(streamId: Int) =
-    Source
-      .fromIterator(() => Iterator.from(1))
-      .map(_ => createEvent(streamId))
-//      .take(1000)
-
-  def eventStream(noOfPublishers: Int, noOfEvents: Int, every: FiniteDuration): Source[SystemEvent, NotUsed] = {
-    Source(1 to noOfPublishers).flatMapMerge(noOfPublishers, i => publish(i, noOfEvents, every))
-  }
 }
