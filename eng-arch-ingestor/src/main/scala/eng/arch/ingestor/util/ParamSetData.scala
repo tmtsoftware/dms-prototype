@@ -97,7 +97,7 @@ object ParamSetData {
 
   private def p1000 = UTCTimeKey.make("UTCTimeKey123").set(UTCTime.now())
 
-  def paramSet: Set[Parameter[_]] = paramSet0 //++ Set(StructKey.make("StructKey1123").set(Struct(paramSet0)))
+  def largeParamSet: Set[Parameter[_]] = paramSet0 //++ Set(StructKey.make("StructKey1123").set(Struct(paramSet0)))
 
-  def smallData: Set[Parameter[_]] = Set(StringKey.make("StringKey123").set("1" * 128))
+  def paramSet: Set[Parameter[_]] = Set(StringKey.make("StringKey123").set("1" * 128))
 }

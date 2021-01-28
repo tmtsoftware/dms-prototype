@@ -35,6 +35,6 @@ class EventServiceMock(noOfPublishers: Int, eventsPerPublisher: Int, every: Fini
   }
 
   def createEvent(subsystem: Subsystem, eventId: Int): SystemEvent = {
-    SystemEvent(Prefix(subsystem, "filter"), EventName(s"event_key_$eventId")).madd(ParamSetData.paramSet)
+    SystemEvent(Prefix(subsystem, "filter"), EventName(s"event_key_$eventId")).madd(ParamSetData.largeParamSet)
   }
 }
