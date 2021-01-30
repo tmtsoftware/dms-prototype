@@ -7,7 +7,7 @@ import org.apache.spark.sql.types.{DataType, StructType}
 import java.io.File
 import java.nio.file.{Files, Paths}
 
-object JsonToDelta {
+object ConversionJob {
   def main(args: Array[String]): Unit = {
 
     FileUtils.deleteDirectory(new File("target/data"))
