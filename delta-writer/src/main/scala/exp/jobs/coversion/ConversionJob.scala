@@ -42,7 +42,7 @@ object ConversionJob {
       .option("checkpointLocation", "target/data/cp/backup")
       //      .trigger(Trigger.ProcessingTime(1.seconds))
 //      .start("target/data/delta")
-      .start("hdfs://localhost:8020/data/delta")
+      .start("target/data/delta")
 
     query.awaitTermination()
   }

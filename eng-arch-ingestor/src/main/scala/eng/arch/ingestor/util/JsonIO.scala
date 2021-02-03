@@ -18,10 +18,10 @@ class JsonIO(path: String, fileSystem: FileSystem)(implicit actorSystem: ActorSy
   private val blockingEC: ExecutionContextExecutor = actorSystem.dispatchers.lookup(DispatcherSelector.blocking())
 
   private val targetDir: Path = Paths.get(path)
-  private val tmpDir: Path    = Paths.get("/tmp/tmp")
+  private val tmpDir: Path    = Paths.get("/tmp/json")
 
-//  Files.createDirectories(targetDir)
-//  Files.createDirectories(tmpDir)
+  Files.createDirectories(targetDir)
+  Files.createDirectories(tmpDir)
 
   def write(batch: Seq[Event]): Future[Path] =
     Future {
