@@ -1,11 +1,11 @@
 package exp.jobs.coversion
 
+import java.io.File
+import java.nio.file.{Files, Paths}
+
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.{DataType, StructType}
-
-import java.io.File
-import java.nio.file.{Files, Paths}
 
 object ConversionJob {
   def main(args: Array[String]): Unit = {
@@ -33,16 +33,17 @@ object ConversionJob {
         $"*",
         year($"eventTime").alias("year"),
         month($"eventTime").alias("month"),
-        dayofmonth($"eventTime").alias("day")
+        dayofmonth($"eventTime").alias("day"),
+        hour($"eventTime").alias("hour")
       )
 
     val query = dataFrame.writeStream
       .format("delta")
-      .partitionBy("year", "month", "day", "source", "eventName")
+      .partitionBy("year", "month", "day", "hour", "source", "eventName")
       .option("checkpointLocation", "target/data/cp/backup")
       //      .trigger(Trigger.ProcessingTime(1.seconds))
-//      .start("target/data/delta")
       .start("target/data/delta")
+//      .start("hdfs://localhost:8020/data/delta")
 
     query.awaitTermination()
   }

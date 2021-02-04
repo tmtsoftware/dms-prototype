@@ -68,7 +68,8 @@ lazy val `parquet-experiment` = project
       "com.lightbend.akka"         %% "akka-stream-alpakka-file" % "2.0.2",
       "org.scalikejdbc"            %% "scalikejdbc"              % "3.5.0",
       "org.postgresql"              % "postgresql"               % "42.2.16",
-      "ch.qos.logback"              % "logback-classic"          % "1.2.3"
+      "ch.qos.logback"              % "logback-classic"          % "1.2.3",
+      "org.apache.hive"             % "hive-jdbc"                % "3.1.2"
     ),
     scalacOptions ++= Seq(
       "-encoding",
