@@ -28,6 +28,7 @@ object ConversionJob {
     val dataFrame = spark.readStream
       .format("json")
       .schema(schema.asInstanceOf[StructType])
+      .option("cleanSource", "delete")
       .load("target/data/json")
       .select(
         $"*",
