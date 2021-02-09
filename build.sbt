@@ -29,7 +29,9 @@ lazy val `dms-spark` = project
 
 lazy val aggregatedProjects: Seq[ProjectReference] = Seq(
   `dms-metadata-access`,
-  `dms-metadata-collection`
+  `dms-metadata-collection`,
+  `eng-arch-ingestor`,
+  `delta-writer`
 )
 
 lazy val `dms-prototype` = project
