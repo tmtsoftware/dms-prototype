@@ -92,7 +92,7 @@ lazy val `delta-writer` = project
   .settings(
     scalaVersion := "2.12.12",
     libraryDependencies ++= Seq(
-      "io.delta"          %% "delta-core"        % "0.7.0",
+      "io.delta"          %% "delta-core"        % "0.8.0",
       "org.apache.spark"  %% "spark-sql"         % "3.0.1",
       "com.typesafe.akka" %% "akka-stream-typed" % "2.6.10",
       "io.bullet"         %% "borer-derivation"  % "1.6.2",
