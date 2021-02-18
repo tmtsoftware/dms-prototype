@@ -1,13 +1,8 @@
 package eng.arch.ingestor
 
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
-import eng.arch.ingestor.util.JsonIO
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileSystem
-
 import java.net.URI
 import java.time.Instant
+
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
@@ -18,21 +13,21 @@ object JsonIngestor {
 
     val conf                   = new Configuration
     val fileSystem: FileSystem = FileSystem.get(new URI("file:///"), conf)
-    //val fileSystem: FileSystem = FileSystem.get(new URI("hdfs://localhost:8020/"), conf)
-    val jsonIO = new JsonIO("target/data/json", fileSystem)
+    val jsonIO                 = new JsonIO("target/data/json", fileSystem)
 
-    val eventServiceMock = new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 4, every = 10.millis)
+    val eventServiceMock =
+      new EventServiceMock(noOfPublishers = 100, eventsPerPublisher = 2, every = 10.millis) // 20k events/second
 
     val startTime = System.currentTimeMillis()
+
     eventServiceMock
       .subscribeAll()
-      .take(24000000)
-      .groupedWithin(40000, 1.seconds)
+      .groupedWithin(40000, 2.seconds) // 2 seconds data of 20k events/second
       .mapAsync(4) { batch =>
         val start = System.currentTimeMillis()
         jsonIO.write(batch).map { _ =>
           val current = System.currentTimeMillis()
-          println(s"Finished writing batch size ${batch.length} in ${current - start} milliseconds >>>>>>>>>>>>>>>>>>>>")
+          println(s"Finished writing batch size ${batch.length} in ${current - start} milliseconds >>>")
         }
       }
       .run()

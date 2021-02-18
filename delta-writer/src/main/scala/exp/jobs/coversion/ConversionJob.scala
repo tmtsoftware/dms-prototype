@@ -5,7 +5,10 @@ import java.nio.file.{Files, Paths}
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.{DataType, StructType}
+
+import scala.concurrent.duration.DurationInt
 
 object ConversionJob {
   def main(args: Array[String]): Unit = {
@@ -40,11 +43,10 @@ object ConversionJob {
 
     val query = dataFrame.writeStream
       .format("delta")
-      .partitionBy("year", "month", "day", "hour", "source", "eventName")
-      .option("checkpointLocation", "target/data/cp/backup")
-      //      .trigger(Trigger.ProcessingTime(1.seconds))
+      .partitionBy("year", "month", "day", "source", "eventName")
+      .option("checkpointLocation", "target/data/cp4/backup")
+      .trigger(Trigger.ProcessingTime(5.minutes))
       .start("target/data/delta")
-//      .start("hdfs://localhost:8020/data/delta")
 
     query.awaitTermination()
   }
