@@ -4,39 +4,17 @@ inThisBuild(
   CommonSettings
 )
 
-lazy val `dms-spark` = project
-  .settings(
-    scalaVersion := "2.12.12",
-    libraryDependencies ++= Seq(
-      "io.delta"          %% "delta-core"        % "0.7.0",
-      "org.apache.spark"  %% "spark-sql"         % "3.0.1",
-      "com.typesafe.akka" %% "akka-stream-typed" % "2.6.10",
-      "io.bullet"         %% "borer-derivation"  % "1.6.2",
-      "org.apache.hadoop"  % "hadoop-aws"        % "2.7.4",
-      "org.postgresql"     % "postgresql"        % "42.2.16"
-    ),
-    scalacOptions ++= Seq(
-      "-encoding",
-      "UTF-8",
-      "-feature",
-      "-unchecked",
-      "-deprecation",
-      "-Xlint:-unused,_",
-      "-Ywarn-dead-code",
-      "-Xfuture"
-    )
-  )
-
 lazy val aggregatedProjects: Seq[ProjectReference] = Seq(
   `dms-metadata-access`,
   `dms-metadata-collection`,
-  `eng-arch-ingestor`,
-  `delta-writer`
+  `eng-arch`
 )
 
 lazy val `dms-prototype` = project
   .in(file("."))
   .aggregate(aggregatedProjects: _*)
+
+// --------------- COLLECTION SERVICE --------------------------
 
 lazy val `dms-metadata-collection` = project
   .in(file("dms-metadata-collection"))
@@ -58,45 +36,21 @@ lazy val `dms-metadata-access-impl` = project
   )
   .dependsOn(`dms-metadata-access-api`)
 
-lazy val `parquet-experiment` = project
-  .settings(
-    scalaVersion := "2.13.3",
-    resolvers += "jitpack" at "https://jitpack.io",
-    libraryDependencies ++= Seq(
-      "com.github.tmtsoftware.csw" %% "csw-event-client"         % "04eaee2",
-      "com.github.mjakubowski84"   %% "parquet4s-akka"           % "1.6.0",
-      "org.apache.hadoop"           % "hadoop-client"            % "3.3.0",
-      "org.apache.hadoop"           % "hadoop-aws"               % "3.3.0",
-      "com.lightbend.akka"         %% "akka-stream-alpakka-file" % "2.0.2",
-      "org.scalikejdbc"            %% "scalikejdbc"              % "3.5.0",
-      "org.postgresql"              % "postgresql"               % "42.2.16",
-      "ch.qos.logback"              % "logback-classic"          % "1.2.3",
-      "org.apache.hive"             % "hive-jdbc"                % "3.1.2"
-    ),
-    scalacOptions ++= Seq(
-      "-encoding",
-      "UTF-8",
-      "-feature",
-      "-unchecked",
-      "-deprecation",
-      "-Wconf:any:warning-verbose",
-      "-Wdead-code",
-      "-Xlint:_,-missing-interpolator,-byname-implicit",
-      "-Xsource:3",
-      "-Xcheckinit"
-      //      "-Xasync" does not work with Scala.js js yet
-    )
-  )
+// --------------- ENG ARCH --------------------------
 
-lazy val `delta-writer` = project
+lazy val `eng-arch` = project
+  .aggregate(`eng-arch-conversion-job`, `eng-arch-ingestor-job`)
+
+lazy val `eng-arch-conversion-job` = project
+  .in(file("eng-arch/eng-arch-conversion-job"))
   .settings(
     scalaVersion := "2.12.12",
     libraryDependencies ++= Seq(
-      "io.delta"          %% "delta-core"        % "0.8.0",
-      "org.apache.spark"  %% "spark-sql"         % "3.0.1",
-      "com.typesafe.akka" %% "akka-stream-typed" % "2.6.10",
-      "io.bullet"         %% "borer-derivation"  % "1.6.2",
-      "org.apache.hadoop"  % "hadoop-aws"        % "2.7.4"
+      "io.delta"         %% "delta-core" % "0.8.0",
+      "org.apache.spark" %% "spark-sql"  % "3.0.1",
+//      "com.typesafe.akka" %% "akka-stream-typed" % "2.6.10",
+      "io.bullet"        %% "borer-derivation" % "1.6.2",
+      "org.apache.hadoop" % "hadoop-aws"       % "2.7.4"
     ),
     scalacOptions ++= Seq(
       "-encoding",
@@ -110,7 +64,8 @@ lazy val `delta-writer` = project
     )
   )
 
-lazy val `eng-arch-ingestor` = project
+lazy val `eng-arch-ingestor-job` = project
+  .in(file("eng-arch/eng-arch-ingestor-job"))
   .settings(
     scalaVersion := "2.13.3",
     resolvers += "jitpack" at "https://jitpack.io",
