@@ -99,5 +99,13 @@ object ParamSetData {
 
   def largeParamSet: Set[Parameter[_]] = paramSet0 //++ Set(StructKey.make("StructKey1123").set(Struct(paramSet0)))
 
-  def paramSet: Set[Parameter[_]] = Set(StringKey.make("StringKey123").set("1" * 128))
+  def paramSet: Set[Parameter[_]] =
+    Set(
+      StringKey.make("payloadKey").set("1" * 128),
+      StringKey.make("StringKey123").set("S123"),
+      StringKey.make("StringKey456").set("S456"),
+      IntKey.make("IntKey123").set(10, 30),
+      IntKey.make("IntKey789").set(70, 90)
+    )
+
 }

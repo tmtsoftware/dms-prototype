@@ -6,7 +6,7 @@ import akka.stream.scaladsl.Source
 import akka.{Done, NotUsed}
 import csw.params.events.{EventName, SystemEvent}
 import csw.prefix.models.{Prefix, Subsystem}
-import eng.arch.ingestor.job.util.ParamSetData
+import eng.arch.ingestor.job.util.ProdLikeParamSet
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -35,6 +35,6 @@ class EventServiceMock(noOfPublishers: Int, eventsPerPublisher: Int, every: Fini
   }
 
   def createEvent(subsystem: Subsystem, eventId: Int): SystemEvent = {
-    SystemEvent(Prefix(subsystem, "filter"), EventName(s"event_key_$eventId")).madd(ParamSetData.paramSet)
+    SystemEvent(Prefix(subsystem, "filter"), EventName(s"event_key_$eventId")).madd(ProdLikeParamSet.paramSet)
   }
 }

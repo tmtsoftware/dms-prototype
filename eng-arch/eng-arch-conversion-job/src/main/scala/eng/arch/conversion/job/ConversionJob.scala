@@ -1,30 +1,26 @@
 package eng.arch.conversion.job
 
-import java.io.File
-import java.nio.file.{Files, Paths}
-
-import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.{DataType, StructType}
 
+import java.nio.file.{Files, Paths}
 import scala.concurrent.duration.DurationInt
-
 object ConversionJob {
   def main(args: Array[String]): Unit = {
-
-    FileUtils.deleteDirectory(new File("target/data"))
-    new File("target/data/json").mkdirs()
 
     val spark = SparkSession
       .builder()
       .appName(getClass.getSimpleName)
-      .master("local[4]")
+      .master("local[1]")
       .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
       .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+      .config("spark.driver.memory", "4g")
       .getOrCreate()
 
-    val schema = DataType.fromJson(Files.readString(Paths.get("delta-writer/src/main/resources/schema.json")))
+    val schema = DataType.fromJson(Files.readString(Paths.get("eng-arch/eng-arch-conversion-job/src/main/resources/schema.json")))
+//    val path   = getClass.getResource("/schema.json").getPath //todo: below two line works with sbt but not with coursier
+//    val schema = DataType.fromJson(Files.readString(Paths.get(path)))
 
     import org.apache.spark.sql.functions._
     import spark.implicits._
@@ -36,16 +32,21 @@ object ConversionJob {
       .load("target/data/json")
       .select(
         $"*",
-        year($"eventTime").alias("year"),
-        month($"eventTime").alias("month"),
-        dayofmonth($"eventTime").alias("day"),
-        hour($"eventTime").alias("hour")
+        to_timestamp($"eventTime").as("eventTimeStamp"),
+        unix_timestamp(to_timestamp($"eventTime")).as("eventUnixTimeStamp"),
+        year($"eventTime").as("year"),
+        month($"eventTime").as("month"),
+        dayofmonth($"eventTime").as("day"),
+        hour($"eventTime").as("hour"),
+        minute($"eventTime").as("minute"),
+        second($"eventTime").as("second")
       )
+      .repartition($"year", $"month", $"day", $"source", $"eventName")
 
     val query = dataFrame.writeStream
       .format("delta")
       .partitionBy("year", "month", "day", "source", "eventName")
-      .option("checkpointLocation", "target/data/cp4/backup")
+      .option("checkpointLocation", "target/data/cp")
       .trigger(Trigger.ProcessingTime(5.minutes))
       .start("target/data/delta")
 

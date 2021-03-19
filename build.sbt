@@ -61,7 +61,11 @@ lazy val `eng-arch-conversion-job` = project
       "-Xlint:-unused,_",
       "-Ywarn-dead-code",
       "-Xfuture"
-    )
+    ),
+    javaOptions ++= Seq(
+      "-Xmx8g"
+    ),
+    run := Defaults.runTask(fullClasspath in Runtime, mainClass in run in Compile, runner in run).evaluated
   )
 
 lazy val `eng-arch-ingestor-job` = project

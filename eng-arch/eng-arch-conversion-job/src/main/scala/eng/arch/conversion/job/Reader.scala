@@ -10,35 +10,38 @@ object Reader extends App {
     .master("local[1]")
     .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
     .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+    .config("spark.driver.memory", "4g")
     .getOrCreate()
 
   import org.apache.spark.sql.functions._
   import spark.implicits._
 
-  val dataFrame = spark.read.format("delta").load("target/data/delta")
+  val df = spark.read.format("delta").load("target/data/delta")
 
-  dataFrame
-    .filter($"year" === 2021 && $"month" === 2 && $"day" === 25 && $"hour" === 23)
-    .filter("eventName=='event_key' and source=='ESW.filter'")
+  private def df_time =
+    df.filter("year==2021 and month==3 and day==19")
+      .filter($"eventTime" >= "2021-03-19T07:08:39.066141Z" && $"eventTime" <= "2021-03-19T07:08:40.066141Z")
 
-//    .filter(array_contains($"paramSet.IntKey.keyName", "IntKey123"))
-    //    .withColumn("abc", explode($"paramSet.IntKey.values"))
-    ////    .select($"abc" (0))
-    //    .show
-    .withColumn("parameter", explode($"paramSet.IntKey"))
-    .filter($"parameter.keyName" === "IntKey123")
-    .select($"eventTime", $"parameter.values" (0) as "values")
-    .show
+  private def df_result1 =
+    df_time
+      .filter("source=='Container.filter'")
+      .filter("eventName == 'event_key_1'")
+      .withColumn("temperature", filter($"paramSet.IntKey", x => x("keyName") === "temperature")) //&& x("values")(0) > 9)(0)
+      .select($"eventTime", $"temperature.values" (0)(0) as "temperature")
 
-  // column selection
-//    .withColumn(
-//      "strKey123",
-//      explode(filter($"paramSet", x => x("StringKey")("keyName") === "StringKey123")("StringKey")("values")(0))
-//    )
-//    .withColumn(
-//      "intKey456",
-//      explode(filter($"paramSet", x => x("IntKey")("keyName") === "IntKey456")("IntKey")("values")(0))
-//    )
-//    .show
+  private def df_result2 =
+    df_time
+      .filter("source=='Container.filter'")
+      .filter("eventName == 'event_key_2'")
+      .withColumn("intensity", filter($"paramSet.IntKey", x => x("keyName") === "intensity"))
+      .select($"eventTime", $"intensity.values" (0)(0) as "intensity")
 
+  def singleEventQuery = df_result1
+
+  def multipleEventJoinQuery =
+    df_result1
+      .join(df_result2, Seq("eventTime"), "fullOuter")
+      .orderBy("eventTime")
+
+  (1 to 100).foreach { _ => println("Rows : " + spark.time(singleEventQuery.collect().length)) }
 }

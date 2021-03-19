@@ -14,6 +14,7 @@ object Common {
       scmInfo := Some(ScmInfo(url(DmsKeys.homepageValue), "git@github.com:tmtsoftware/dms-prototype.git")),
       resolvers += "jitpack" at "https://jitpack.io",
       autoCompilerPlugins := true,
+      fork:=true,
       scalacOptions ++= Seq(
         "-encoding",
         "UTF-8",
