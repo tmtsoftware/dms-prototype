@@ -29,6 +29,7 @@ object ConversionJob {
       .format("json")
       .schema(schema.asInstanceOf[StructType])
       .option("cleanSource", "delete")
+      .option("maxFilesPerTrigger", "300") // todo: set a sensible default for 5 min trigger
       .load("target/data/json")
       .select(
         $"*",
