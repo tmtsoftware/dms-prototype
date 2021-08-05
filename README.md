@@ -1,11 +1,29 @@
 # DMS-prototype - TMT Data Management System
 This repository begins the implementation of the TMT Data Management System (DMS). This repository contains protyping code that addresses risks during the DMS final design phase. A different repository will be used for the full development phase in the future.
 
+## Quick Setup:
 
+#### Pre-requisite
 
-#### SETUP:
+Postgres should be installed on your machine with `postgres` database, for more details refer [csw docs](https://tmtsoftware.github.io/csw//services/database.html)
 
-##### Start redis
+#### Start required csw services ( Location Service, Event Service and Database Service)
+
+```bash
+cs launch csw-services:4.0.0-M1 -- start -e -d
+```
+
+#### Start DMS Metadata Access Service and Collection Job
+
+```bash
+cs launch dms-services:commitSHA -- start -p 9999
+```
+
+---
+
+## Detailed Manual Setup:
+
+##### Start Event Service and Database Service
 cs launch csw-services:4.0.0-M1 -- start -e -d
 
 ##### Start postgres db server
