@@ -15,7 +15,7 @@ import org.jooq.DSLContext
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
-object HttpServer extends PredefinedFromStringUnmarshallers {
+object AccessServiceApp extends PredefinedFromStringUnmarshallers {
 
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol(), "metadata-access-server")
   private val dslContext: DSLContext                      = Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)

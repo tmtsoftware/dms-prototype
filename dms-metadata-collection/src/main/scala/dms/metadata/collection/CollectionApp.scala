@@ -14,7 +14,7 @@ import org.jooq.DSLContext
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
-object Main {
+object CollectionApp {
 
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
 

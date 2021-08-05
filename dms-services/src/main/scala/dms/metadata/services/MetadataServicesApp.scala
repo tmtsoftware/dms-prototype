@@ -2,8 +2,8 @@ package dms.metadata.services
 
 import caseapp.core.RemainingArgs
 import caseapp.core.app.CommandApp
-import dms.metadata.access.HttpServer
-import dms.metadata.collection.Main
+import dms.metadata.access.AccessServiceApp
+import dms.metadata.collection.CollectionApp
 import dms.metadata.services.Command.Start
 
 object MetadataServicesApp extends CommandApp[Command] {
@@ -31,12 +31,12 @@ object MetadataServicesApp extends CommandApp[Command] {
 
     if (start.collection) {
       println("starting collection service")
-      Main.main(Array())
+      CollectionApp.main(Array())
     }
 
     if (start.access) {
       println("starting access service")
-      HttpServer.main(Array(start.port.toString))
+      AccessServiceApp.main(Array(start.port.toString))
     }
   }
 }
