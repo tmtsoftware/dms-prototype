@@ -19,8 +19,8 @@ object Command {
       @Short("i")
       init: Boolean = false,
       @HelpMessage(
-        "HTTP server will be bound to this port. " +
-          "If a value is not provided, it will be picked up from configuration"
+        "Access Service HTTP server will be bound to this port. " +
+          "If a value is not provided, random port will be used"
       )
       @Short("p")
       port: Int = SocketUtils.getFreePort
