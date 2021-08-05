@@ -7,6 +7,7 @@ inThisBuild(
 lazy val aggregatedProjects: Seq[ProjectReference] = Seq(
   `dms-metadata-access`,
   `dms-metadata-collection`,
+  `dms-services`,
   `eng-arch`
 )
 
@@ -15,6 +16,16 @@ lazy val `dms-prototype` = project
   .aggregate(aggregatedProjects: _*)
 
 // --------------- COLLECTION SERVICE --------------------------
+
+lazy val `dms-services` = project
+  .in(file("dms-services"))
+  .settings(
+    libraryDependencies ++= Dependencies.MetadataServices.value
+  )
+  .dependsOn(
+    `dms-metadata-access-impl`,
+    `dms-metadata-collection`
+  )
 
 lazy val `dms-metadata-collection` = project
   .in(file("dms-metadata-collection"))

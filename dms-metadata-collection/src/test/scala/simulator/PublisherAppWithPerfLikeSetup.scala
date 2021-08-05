@@ -66,7 +66,7 @@ object PublisherAppWithPerfLikeSetup extends App {
   // ============== TEST BEGINS ============
 
   // ========= Publish ObserveEvent 1 msg/sec =============
-//  publishObsEvent("exposureStart", "2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
+  publishObsEvent("exposureStart", "2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
 
   // ========= Publish Fast Event 1 msg/10ms =============
 //  publishEvent(1, 10.millis, "1_10_ms", 5120)

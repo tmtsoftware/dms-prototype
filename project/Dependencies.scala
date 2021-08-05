@@ -16,4 +16,8 @@ object Dependencies {
       Libs.`nom-tam-fits`
     )
   )
+
+  val MetadataServices: Def.Initialize[Seq[ModuleID]] = Def.setting(
+    Seq(Libs.`case-app`)
+  )
 }
