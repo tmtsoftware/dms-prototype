@@ -6,6 +6,7 @@ import akka.actor.CoordinatedShutdown.PhaseBeforeServiceUnbind
 import akka.actor.typed.{ActorSystem, SpawnProtocol}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.unmarshalling.PredefinedFromStringUnmarshallers
 import csw.database.DatabaseServiceFactory
 import csw.location.client.ActorSystemFactory
 import dms.metadata.access.core.{DatabaseReader, HeaderProcessor}
@@ -14,7 +15,7 @@ import org.jooq.DSLContext
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
-object HttpServer {
+object HttpServer extends PredefinedFromStringUnmarshallers {
 
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol(), "metadata-access-server")
   private val dslContext: DSLContext                      = Await.result(new DatabaseServiceFactory(system).makeDsl(), 10.seconds)
@@ -31,8 +32,11 @@ object HttpServer {
     val route =
       path("fits-header") {
         get {
-          parameter("exp-id") { expId =>
-            complete(metadataAccessService.getFITSHeader(expId))
+          parameter("exp-id", "keywords".as(CsvSeq[String]).optional) { (expId, keywords) =>
+            keywords match {
+              case Some(value) => complete(metadataAccessService.getFITSHeader(expId, value.toList))
+              case None        => complete(metadataAccessService.getFITSHeader(expId))
+            }
           }
         }
       }

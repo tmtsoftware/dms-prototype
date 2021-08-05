@@ -6,15 +6,15 @@ This repository begins the implementation of the TMT Data Management System (DMS
 #### SETUP:
 
 ##### Start redis
-cs launch csw-services:0.1.0-SNAPSHOT -- start -e
+cs launch csw-services:4.0.0-M1 -- start -e -d
 
 ##### Start postgres db server
 
-User should have `postgres` server installed with `postgres` database and `postgres` user created.
+User should have `postgres` server installed with `postgres` database and `dmsuser` user created.
 
 ##### Login to postgres from command line
 ``` 
-psql -d postgres -h localhost -p 5432 -U postgres
+psql -d postgres -h localhost -p 5432 -U dmsuser
 ```
 
 ##### create snapshots table and index 
@@ -63,6 +63,8 @@ Note: You should see some data populated in tables : `keyword_values` and `event
 
 ##### Run access service:
 
-Note: Copy any `exposureId` from table : `keyword_values` and run Main with that `exposureId`
+`src/main/scala/dms/metadata/access/HttpServer.scala`
 
-`src/main/scala/dms/metadata/access/Main.scala`
+#### Test Api
+
+Copy any `exposureId` from table : `keyword_values`, update apptest.http with ip, port and exp-id to do a get call
