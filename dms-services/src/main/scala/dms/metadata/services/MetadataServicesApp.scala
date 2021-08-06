@@ -6,6 +6,9 @@ import dms.metadata.access.AccessServiceApp
 import dms.metadata.collection.CollectionApp
 import dms.metadata.services.Command.Start
 
+import scala.io.Source
+import scala.sys.process._
+
 object MetadataServicesApp extends CommandApp[Command] {
 
   override def run(command: Command, remainingArgs: RemainingArgs): Unit =
@@ -15,18 +18,11 @@ object MetadataServicesApp extends CommandApp[Command] {
 
   def run(start: Start): Unit = {
 
-    //    automate db setup
     if (start.init) {
       println("initializing database")
-
-      val createUserSqlPath: String  = getClass.getResource("/create_user.sql").getPath
-      val createTableSqlPath: String = getClass.getResource("/create_tables.sql").getPath
-
-      //    Create user
-      Runtime.getRuntime.exec(s"psql -d postgres -a -f $createUserSqlPath")
-
-      //    Create table using created user
-      Runtime.getRuntime.exec(s"psql -d postgres -U dmsuser -a -f $createTableSqlPath")
+      val sqlQueries  = Source.fromResource("db_setup.sql").getLines().mkString
+      val psqlCommand = s"""psql -d postgres -a -c "$sqlQueries" """
+      psqlCommand.!!
     }
 
     if (start.collection) {

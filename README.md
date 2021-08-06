@@ -19,6 +19,7 @@ cs launch csw-services:4.0.0-M1 -- start -e -d
 cs launch dms-services:commitSHA -- start -p 9999
 ```
 
+* Additionally, if required, add `-i` argument to initialize database 
 ---
 
 ## Detailed Manual Setup:

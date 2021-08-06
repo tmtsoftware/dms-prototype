@@ -4,6 +4,11 @@ drop index if exists idx_hdr_exposure_id;
 drop table if exists event_snapshots;
 drop table if exists keyword_values;
 
+DROP USER IF EXISTS dmsuser;
+CREATE USER dmsuser with password 'dmsuser';
+
+set role dmsuser;
+
 create table event_snapshots
 (
     exposure_id    varchar(50) not null,
