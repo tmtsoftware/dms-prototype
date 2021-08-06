@@ -1,7 +1,7 @@
 ####
-GET http://127.0.0.1:9999/fits-header?exp-id=2034A-P054-O010-WFOS-BLU1-SCI1-3
+GET http://127.0.0.1:9999/fits-header?exp-id=2020A-001-123-IRIS-IMG-SCI0-0003
 
 
 
 ####
-GET http://127.0.0.1:9999/fits-header?exp-id=2034A-P054-O010-WFOS-BLU1-SCI1-3&keywords=BASE1,SIMPLE1
+GET http://127.0.0.1:9999/fits-header?exp-id=2020A-001-123-IRIS-IMG-SCI0-0003&keywords=SIMPLE1,ORIGIN

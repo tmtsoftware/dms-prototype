@@ -5,7 +5,8 @@ import csw.event.client.EventServiceFactory
 import csw.location.client.ActorSystemFactory
 import csw.params.core.generics.KeyType.StringKey
 import csw.params.core.generics.Parameter
-import csw.params.events.{EventName, ObserveEvent, SystemEvent}
+import csw.params.core.models.ExposureId
+import csw.params.events.{EventName, IRDetectorEvent, ObserveEvent, SystemEvent}
 import csw.prefix.models.Prefix
 import csw.prefix.models.Subsystem.ESW
 
@@ -45,14 +46,17 @@ object PublisherAppWithPerfLikeSetup extends App {
   }
 
   def publishObsEvent(name: String, exposureId: String, every: FiniteDuration) = {
-    var counter  = 1
-    val expIdKey = StringKey.make("exposureId")
-    val obsEvent = ObserveEvent(Prefix(ESW, "observe"), EventName(name))
+    var counter = 1
 
     def eventGenerator() = {
       println("publishing observer event : " + counter)
+      val observeEvent =
+        IRDetectorEvent.exposureStart(
+          Prefix(ESW, "observe"),
+          ExposureId(s"2020A-001-123-IRIS-IMG-SCI0-${"%04d".format(counter)}")
+        )
       counter += 1
-      Some(obsEvent.add(expIdKey.set(s"$exposureId-$counter")))
+      Some(observeEvent)
     }
 
     publisher.publish(eventGenerator(), every)
@@ -66,7 +70,7 @@ object PublisherAppWithPerfLikeSetup extends App {
   // ============== TEST BEGINS ============
 
   // ========= Publish ObserveEvent 1 msg/sec =============
-  publishObsEvent("exposureStart", "2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
+  publishObsEvent("ObserveEvent.ExposureStart", "2034A-P054-O010-WFOS-BLU1-SCI1", 1.second)
 
   // ========= Publish Fast Event 1 msg/10ms =============
 //  publishEvent(1, 10.millis, "1_10_ms", 5120)

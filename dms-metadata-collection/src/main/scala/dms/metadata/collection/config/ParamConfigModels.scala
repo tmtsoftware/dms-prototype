@@ -17,7 +17,7 @@ object KeywordConfig {
   }
 
   final case class ConstantKeywordConfig(keyword: String, value: String) extends KeywordConfig {
-    val obsEventName = "exposureStart" //FIXME read value from config or find better approach
+    val obsEventName = "ObserveEvent.ExposureStart" //FIXME read value from config or find better approach
   }
 }
 
