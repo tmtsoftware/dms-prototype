@@ -57,11 +57,11 @@ lazy val `eng-arch-conversion-job` = project
   .settings(
     scalaVersion := "2.12.12",
     libraryDependencies ++= Seq(
-      "io.delta"         %% "delta-core" % "0.8.0",
-      "org.apache.spark" %% "spark-sql"  % "3.0.1",
+      "io.delta"         %% "delta-core" % "1.0.0",
+      "org.apache.spark" %% "spark-sql"  % "3.1.2",
 //      "com.typesafe.akka" %% "akka-stream-typed" % "2.6.10",
-      "io.bullet"        %% "borer-derivation" % "1.6.2",
-      "org.apache.hadoop" % "hadoop-aws"       % "2.7.4"
+      "io.bullet"        %% "borer-derivation" % "1.7.2",
+      "org.apache.hadoop" % "hadoop-aws"       % "3.3.1"
     ),
     scalacOptions ++= Seq(
       "-encoding",
@@ -85,8 +85,8 @@ lazy val `eng-arch-ingestor-job` = project
     scalaVersion := "2.13.3",
     resolvers += "jitpack" at "https://jitpack.io",
     libraryDependencies ++= Seq(
-      "com.github.tmtsoftware.csw" %% "csw-event-client" % "04eaee2",
-      "org.apache.hadoop"           % "hadoop-client"    % "3.3.0"
+      "com.github.tmtsoftware.csw" %% "csw-event-client" % "9252764",
+      "org.apache.hadoop"           % "hadoop-client"    % "3.3.1"
     ),
     scalacOptions ++= Seq(
       "-encoding",
