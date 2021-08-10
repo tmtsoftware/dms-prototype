@@ -1,10 +1,11 @@
 package dms.metadata.services
 
-import caseapp.core.RemainingArgs
+import caseapp.RemainingArgs
 import caseapp.core.app.CommandApp
-import dms.metadata.access.AccessServiceApp
-import dms.metadata.collection.CollectionApp
-import dms.metadata.services.Command.Start
+import dms.metadata.access.AccessMain
+import dms.metadata.collection.CollectionMain
+import dms.metadata.services.cli.Command
+import dms.metadata.services.cli.Command.Start
 
 import scala.io.Source
 import scala.sys.process._
@@ -27,12 +28,12 @@ object MetadataServicesApp extends CommandApp[Command] {
 
     if (start.collection) {
       println("starting collection service")
-      CollectionApp.main(Array())
+      CollectionMain.start(start.keywordMappingsConf)
     }
 
     if (start.access) {
       println("starting access service")
-      AccessServiceApp.main(Array(start.port.toString))
+      AccessMain.start(start.port, start.keywordsConf)
     }
   }
 }

@@ -5,7 +5,8 @@ object Dependencies {
     Seq(
       Csw.`csw-database`,
       Csw.`csw-location-client`,
-      Csw.`csw-event-client`
+      Csw.`csw-event-client`,
+      Libs.`case-app`
     )
   )
 
@@ -13,7 +14,8 @@ object Dependencies {
     Seq(
       Csw.`csw-database`,
       Csw.`csw-location-client`,
-      Libs.`nom-tam-fits`
+      Libs.`nom-tam-fits`,
+      Libs.`case-app`
     )
   )
 

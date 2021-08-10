@@ -11,10 +11,11 @@ import dms.metadata.collection.core.{DatabaseWriter, KeywordValueExtractor, Meta
 import io.lettuce.core.{RedisClient, RedisURI}
 import org.jooq.DSLContext
 
+import java.nio.file.Path
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
-object CollectionApp {
+class CollectionWiring(externalConfig: List[Path]) {
 
   implicit val system: ActorSystem[SpawnProtocol.Command] = ActorSystemFactory.remote(SpawnProtocol())
 
@@ -26,13 +27,13 @@ object CollectionApp {
   private val metadataSubscriber: MetadataSubscriber = MetadataSubscriber.make(redisClient, redisURI)
 
   private val databaseConnector                = new DatabaseWriter(dslContext)
-  private val keywordConfigReader              = new KeywordConfigReader
+  private val keywordConfigReader              = new KeywordConfigReader(externalConfig)
   private val valueExtractor                   = new KeywordValueExtractor(keywordConfigReader.headerConfigs)
   private val metadataCollectionService        = new MetadataCollectionService(metadataSubscriber, databaseConnector, valueExtractor)
   private val obsEventNames                    = ObserveEventNameConfigReader.read()
   val coordinatedShutdown: CoordinatedShutdown = CoordinatedShutdown(system)
 
-  def main(args: Array[String]): Unit = {
+  def start(): Unit = {
     metadataCollectionService.start(obsEventNames)
 
     coordinatedShutdown

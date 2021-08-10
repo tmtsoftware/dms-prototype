@@ -1,7 +1,8 @@
-package dms.metadata.services
+package dms.metadata.services.cli
 
 import caseapp.{CommandName, HelpMessage, ExtraName => Short}
-import csw.network.utils.SocketUtils
+
+import java.nio.file.Path
 
 sealed trait Command
 
@@ -23,7 +24,15 @@ object Command {
           "If a value is not provided, random port will be used"
       )
       @Short("p")
-      port: Int = SocketUtils.getFreePort
+      port: Option[Int],
+      @HelpMessage("Path of access service header-keywords.conf")
+      @Short("k")
+      keywordsConf: Option[Path],
+      @HelpMessage(
+        "Path of collection service -m /path/to/WFOS-keyword-mappings.conf -m /path/to/IRIS-keyword-mappings.conf ..."
+      )
+      @Short("m")
+      keywordMappingsConf: List[Path] = Nil
   ) extends Command
 
   object Start {
@@ -31,12 +40,14 @@ object Command {
         access: Boolean = false,
         collection: Boolean = false,
         init: Boolean = false,
-        port: Int
+        port: Option[Int],
+        keywordsConf: Option[Path],
+        keywordMappingsConf: List[Path] = Nil
     ): Start =
       // mark access and collection flags=true when no option is provided to start command
       if (access || collection)
-        new Start(access, collection, init, port)
-      else new Start(true, true, init, port)
+        new Start(access, collection, init, port, keywordsConf, keywordMappingsConf)
+      else new Start(true, true, init, port, keywordsConf, keywordMappingsConf)
   }
 
 }

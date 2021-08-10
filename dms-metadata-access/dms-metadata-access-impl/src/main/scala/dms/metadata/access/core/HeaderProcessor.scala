@@ -1,22 +1,48 @@
 package dms.metadata.access.core
 
-import java.io.{ByteArrayOutputStream, PrintStream}
-
 import com.typesafe.config.{Config, ConfigFactory}
 import csw.prefix.models.Subsystem
-import csw.prefix.models.Subsystem.{IRIS, WFOS}
 import nom.tam.fits.Header
 
+import java.io.{ByteArrayOutputStream, PrintStream}
+import java.nio.file.Path
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-class HeaderProcessor {
+class HeaderProcessor(externalConfigPath: Option[Path]) {
 
   def loadHeaderList(): Map[Subsystem, List[String]] = {
-    val config: Config              = ConfigFactory.parseResources("header-keywords.conf")
-    val subsystems: List[Subsystem] = List(IRIS, WFOS) // FIXME Should this be passed as config/ or consider all subsystem
-    subsystems.map { subsystem =>
-      subsystem -> config.resolve().getStringList(subsystem.name).asScala.toList
-    }.toMap
+    if (externalConfigPath.isDefined) loadHeaderListFromResourceConf() ++ loadHeaderListFromExternalConf()
+    else loadHeaderListFromResourceConf()
+  }
+
+  private def loadHeaderListFromExternalConf(): Map[Subsystem, List[String]] = {
+    val fileConfig = ConfigFactory.parseFile(externalConfigPath.get.toFile)
+    val config     = ConfigFactory.load(fileConfig)
+    config
+      .getConfig("dms.metadata.access")
+      .entrySet()
+      .asScala
+      .filter(e => Subsystem.values.exists(s => s.name.equalsIgnoreCase(e.getKey)))
+      .map(e =>
+        Subsystem.upperCaseNameValuesToMap(e.getKey.toUpperCase) ->
+          e.getValue.atKey(e.getKey).getStringList(e.getKey).asScala.toList
+      )
+      .toMap
+  }
+
+  private def loadHeaderListFromResourceConf(): Map[Subsystem, List[String]] = {
+    val config: Config = ConfigFactory.parseResources("header-keywords.conf")
+    config
+      .resolve()
+      .getConfig("dms.metadata.access")
+      .entrySet()
+      .asScala
+      .filter(e => Subsystem.values.exists(s => s.name.equalsIgnoreCase(e.getKey)))
+      .map(e =>
+        Subsystem.upperCaseNameValuesToMap(e.getKey.toUpperCase) ->
+          e.getValue.atKey(e.getKey).getStringList(e.getKey).asScala.toList
+      )
+      .toMap
   }
 
   def generateFormattedHeader(keywords: Seq[String], keywordData: Map[String, String]): String = {

@@ -20,6 +20,18 @@ cs launch dms-services:commitSHA -- start -p 9999
 ```
 
 * Additionally, if required, add `-i` argument to initialize database 
+
+##### To pass external configurations use `--keywords-conf` and `--keyword-mappings-conf` argument.
+
+* Argument `--keyword-mappings-conf` should be repeated to pass mappings for each subsystem separately and should follow file name convention like `{subsystem}-keyword-mappings.conf`. e.g. `IRIS-keyword-mappings.conf`
+
+```bash
+cs launch dms-services:commitSHA -- start -p 9999 --keywords-conf "/path/to/header-keywords.conf" --keyword-mappings-conf "/path/to/IRIS-keyword-mappings.conf" --keyword-mappings-conf "/path/to/WFOS-keyword-mappings.conf"
+```
+
+These can be standalone config files or composed config files written in [HOCON](https://github.com/lightbend/config#using-hocon-the-json-superset) format, for more details around what configurations are expected in these files refer existing access service [resource](https://github.com/tmtsoftware/dms-prototype/tree/main/dms-metadata-access/dms-metadata-access-impl/src/main/resources) files and collection service [resource](https://github.com/tmtsoftware/dms-prototype/tree/main/dms-metadata-collection/src/main/resources) files.
+
+
 ---
 
 ## Detailed Manual Setup:
