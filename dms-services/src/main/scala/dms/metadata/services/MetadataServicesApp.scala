@@ -22,7 +22,7 @@ object MetadataServicesApp extends CommandApp[Command] {
     if (start.init) {
       println("initializing database")
       val sqlQueries  = Source.fromResource("db_setup.sql").getLines().mkString
-      val psqlCommand = s"""psql -d postgres -a -c "$sqlQueries" """
+      val psqlCommand = s"""psql -h localhost -d postgres -a -c "$sqlQueries" """
       psqlCommand.!!
     }
 
