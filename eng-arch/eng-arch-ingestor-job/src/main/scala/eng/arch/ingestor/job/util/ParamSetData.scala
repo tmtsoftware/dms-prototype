@@ -52,8 +52,6 @@ object ParamSetData {
 
   // Choice Key2
   private val p24 = ChoiceKey.make("ChoiceKey", NoUnits, Choices.from("First", "Second")).set("First", "Second")
-  // Struct Key
-  private val p25 = StructKey.make("StructKey123").set(Struct(Set(p1, p2)))
   private val p26 = StringKey.make("StringKey123").set("abc")
 
   private val pm               = ProperMotion(0.5, 2.33)
@@ -90,7 +88,6 @@ object ParamSetData {
       p22,
       p23,
       p24,
-      p25,
       p26,
       p27,
       p1000

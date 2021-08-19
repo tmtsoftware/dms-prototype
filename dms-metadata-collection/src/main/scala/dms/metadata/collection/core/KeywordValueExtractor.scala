@@ -1,14 +1,12 @@
 package dms.metadata.collection.core
 
-import java.util.concurrent.ConcurrentHashMap
-
 import csw.params.core.generics.Parameter
-import csw.params.core.models.Struct
 import csw.params.events.{Event, EventKey}
 import csw.prefix.models.Subsystem
 import dms.metadata.collection.config.KeywordConfig.{ComplexKeywordConfig, ConstantKeywordConfig}
 import dms.metadata.collection.config.{FitsValue, KeywordConfig, ParamPath}
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.collection.mutable
 
 class KeywordValueExtractor(headerConfigs: Map[Subsystem, List[KeywordConfig]]) {
@@ -27,23 +25,15 @@ class KeywordValueExtractor(headerConfigs: Map[Subsystem, List[KeywordConfig]]) 
       .collect { case (keyword, Some(value)) => keyword -> value }
       .toMap
 
-  private def getParam(path: List[ParamPath], paramSet: Set[Parameter[_]]): Option[Parameter[_]] = {
-    def traverseStruct(paramPath: ParamPath) =
-      paramSet.find(_.keyName == paramPath.keyName).flatMap { param =>
-        param.get(paramPath.index).map(x => x.asInstanceOf[Struct].paramSet)
-      }
-
+  private def getParam(path: ParamPath, paramSet: Set[Parameter[_]]): Option[Parameter[_]] = {
     def traverseNonStruct(paramPath: ParamPath) =
       paramSet.find(_.keyName == paramPath.keyName).map { p =>
         val paramOfAny = p.asInstanceOf[Parameter[Any]]
         paramOfAny.copy(items = mutable.ArraySeq(paramOfAny.items(paramPath.index)))
       }
 
-    path match {
-      case Nil          => None
-      case head :: Nil  => traverseNonStruct(head)
-      case head :: next => traverseStruct(head).flatMap(getParam(next, _))
-    }
+    if (path.keyName.isBlank) return None
+    traverseNonStruct(path)
   }
 
   private def extract(

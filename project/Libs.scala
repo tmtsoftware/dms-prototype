@@ -2,7 +2,7 @@ import sbt._
 
 object Csw {
   private val Org           = "com.github.tmtsoftware.csw"
-  private val Version       = "9252764"
+  private val Version       = "e563c7e"
   val `csw-location-client` = Org %% "csw-location-client" % Version
   val `csw-event-client`    = Org %% "csw-event-client"    % Version
   val `csw-database`        = Org %% "csw-database"        % Version

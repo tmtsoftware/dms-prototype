@@ -13,7 +13,7 @@ object KeywordConfig {
       private val paramKey: String,
       attribute: Option[String]
   ) extends KeywordConfig {
-    val paramPath: List[ParamPath] = ParamConfigParser.from(paramKey)
+    val paramPath: ParamPath = ParamConfigParser.toParamPath(paramKey)
   }
 
   final case class ConstantKeywordConfig(keyword: String, value: String) extends KeywordConfig {
@@ -26,10 +26,7 @@ case class ParamPath(keyName: String, index: Int = 0)
 object ParamConfigParser {
   private val pattern = """(.*)\[(\d+)\]""".r
 
-  def from(path: String): List[ParamPath] =
-    if (path.isBlank) List.empty else path.split("/").toList.map(toParamPath)
-
-  private def toParamPath(name: String): ParamPath =
+  def toParamPath(name: String): ParamPath =
     name match {
       case pattern(name, index) => ParamPath(name, index.toInt)
       case _                    => ParamPath(name)
